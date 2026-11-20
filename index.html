@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>ほしづたい — 波に追われて、星から星へ</title>
+<title>Novasurf — 波に追われて、星から星へ</title>
 <meta name="description" content="押している間だけ星につかまって回り、離すと飛び出す。巨星・パルサー・ブラックホールを使い分け、後ろから迫る波に乗って何光年飛べるか。星の並びは毎日変わり、その日は全員おなじ。">
-<meta property="og:title" content="ほしづたい — 波に追われて、星から星へ">
+<meta property="og:title" content="Novasurf — 波に追われて、星から星へ">
 <meta property="og:description" content="星から星へ伝って飛ぶ。迫る波には、乗ってしまえ。今日の星の並びは全員おなじ。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nosunosukawa.github.io/swingby/">
@@ -45,8 +45,8 @@ button.ghost{background:transparent;color:#eaf2ff;border:1.5px solid rgba(234,24
 <canvas id="c"></canvas>
 <button id="mute" aria-label="音の切り替え">🔊</button>
 <div class="ov" id="title">
-  <div class="sub">波に追われて、星から星へ</div>
-  <h1>ほしづたい</h1>
+  <div class="sub">ノヴァサーフ ― 波に追われて、星から星へ</div>
+  <h1>NOVASURF</h1>
   <p class="how"><b>押している間</b>、近くの星につかまって回る。<b>離す</b>と、その向きに飛び出す。<br>後ろから来る<b>波</b>に飲まれたら終わり。ただし波のすぐ前は<b>波乗り</b>で加速する。</p>
   <div class="kinds"><span><i style="background:#8fd0ff"></i>ふつうの星</span><span><i style="background:#ff9a5a"></i>巨星：大きく回って強く射出</span><span><i style="background:#e8fbff"></i>パルサー：一気に加速。長居すると弾かれる</span><span><i style="background:#b06bff"></i>ブラックホール：吸い込まれる前に離すと大加速</span></div>
   <div class="day" id="day"></div>
@@ -96,7 +96,7 @@ const seed=now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
 const dayLabel='今日のコース '+(now.getMonth()+1)+'/'+now.getDate()+'（全員おなじ星の並び）';
 $('day').textContent=dayLabel;$('day2').textContent=dayLabel;
 
-const NAME='ほしづたい';
+const NAME='Novasurf';
 const BASE=430,VMAX=1150,RANGE=340,BOUND=560,LY=200;
 let st='title',P,anchors,allStars=[],route=[],marks=[],routeT=0,ghost=null,dust,parts,texts,trail,wave,tNow=0,rnd,nextX,lastAY,stats,hold=false,shake=0,deadT=0,cause='';
 const cam={x:0,y:0,s:.5};
@@ -482,14 +482,14 @@ document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 $('start').addEventListener('click',start);
 $('again').addEventListener('click',start);
 $('share').addEventListener('click',()=>{
-  const t=NAME+'で '+stats.dist.toFixed(1)+' 光年 飛んだ（'+rankOf(stats.dist)+'・最高は光速の'+spPct(stats.maxSp)+'%）\n今日の星の並びは全員おなじ。 #'+NAME;
+  const t=NAME+' で '+stats.dist.toFixed(1)+' 光年 飛んだ（'+rankOf(stats.dist)+'・最高は光速の'+spPct(stats.maxSp)+'%）\n今日の星の並びは全員おなじ。 #'+NAME;
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://nosunosukawa.github.io/swingby/'),'_blank','noopener');
 });
 
 $('save').addEventListener('click',()=>{
   $('map').toBlob(b=>{
     if(!b)return;
-    const f=new File([b],'hoshizutai-'+seed+'.png',{type:'image/png'});
+    const f=new File([b],'novasurf-'+seed+'.png',{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(()=>{});return}
     const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
   },'image/png');
