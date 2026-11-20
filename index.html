@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>スイングバイ — 星につかまって、銀河を飛べ</title>
+<meta name="description" content="押している間だけ近くの星につかまって回る。離すと飛び出す。ボタンひとつで銀河を何光年飛べるか。毎日コースが変わるブラウザゲーム。">
+<meta property="og:title" content="スイングバイ — 星につかまって、銀河を飛べ">
+<meta property="og:description" content="押すとつかまる。離すと飛び出す。ボタンひとつで銀河を何光年飛べるか。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nosunosukawa.github.io/swingby/">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#070b1f">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#070b1f;color:#eaf2ff;font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic UI","Noto Sans JP",sans-serif;touch-action:none;overscroll-behavior:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px calc(20px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));text-align:center;background:radial-gradient(ellipse at center,rgba(7,11,31,.55),rgba(7,11,31,.86))}
+.ov[hidden]{display:none}
+h1{font-size:clamp(40px,11vw,84px);letter-spacing:.06em;font-weight:900;line-height:1.05;background:linear-gradient(100deg,#7df9ff,#fff 45%,#ffb3f0);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(125,249,255,.35))}
+.sub{font-size:clamp(13px,3.6vw,17px);opacity:.85;letter-spacing:.08em}
+.how{font-size:clamp(14px,3.9vw,18px);line-height:1.9;max-width:30em}
+.how b{color:#7df9ff}
+.day{font-size:13px;opacity:.7;letter-spacing:.1em}
+button{font:inherit;color:#06101f;background:linear-gradient(180deg,#9dfcff,#52d8ff);border:0;border-radius:999px;padding:14px 34px;font-size:clamp(17px,4.6vw,21px);font-weight:800;letter-spacing:.08em;cursor:pointer;box-shadow:0 6px 24px rgba(82,216,255,.45);touch-action:manipulation}
+button:active{transform:scale(.96)}
+button.ghost{background:transparent;color:#eaf2ff;border:1.5px solid rgba(234,242,255,.55);box-shadow:none}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.big{font-size:clamp(54px,16vw,110px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:.32em;font-weight:700;margin-left:.2em;opacity:.85}
+.rank{font-size:clamp(20px,6vw,30px);font-weight:800;color:#ffd86b;letter-spacing:.1em}
+.stats{display:grid;grid-template-columns:repeat(2,auto);gap:4px 22px;font-size:clamp(13px,3.7vw,16px);text-align:left;opacity:.92}
+.stats span:nth-child(even){text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.nb{color:#7df9ff;font-weight:800;font-size:15px;min-height:1.3em}
+#mute{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:42px;height:42px;padding:0;border-radius:50%;font-size:19px;background:rgba(255,255,255,.1);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.25);z-index:5}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="mute" aria-label="音の切り替え">🔊</button>
+<div class="ov" id="title">
+  <div class="sub">ボタンひとつの宇宙飛行</div>
+  <h1>スイングバイ</h1>
+  <p class="how"><b>押している間</b>、近くの星につかまって回る。<br><b>離す</b>と、その向きに飛び出す。<br>回るほど速くなる。後ろから来る<b>波</b>に飲まれたら終わり。</p>
+  <div class="day" id="day"></div>
+  <button id="start">スタート</button>
+  <div class="day" id="bestT"></div>
+</div>
+<div class="ov" id="result" hidden>
+  <div class="sub" id="cause"></div>
+  <div class="big"><span id="rDist">0</span><small>光年</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="nb" id="rNew"></div>
+  <div class="stats">
+    <span>最高速度</span><span id="rSp"></span>
+    <span>ナイス射出</span><span id="rPf"></span>
+    <span>星くず</span><span id="rDu"></span>
+    <span>ニアミス</span><span id="rNm"></span>
+    <span>自己ベスト</span><span id="rBest"></span>
+  </div>
+  <div class="row">
+    <button id="again">もう一度</button>
+    <button id="share" class="ghost">X に投稿</button>
+  </div>
+  <div class="day" id="day2"></div>
+</div>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const cv=$('c'),g=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=window.innerWidth;H=window.innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);}
+window.addEventListener('resize',resize);resize();
+
+// ---- 今日のコース（日付から同じ並びを作る）
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const now=new Date();
+const seed=now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
+const dayLabel='今日のコース '+(now.getMonth()+1)+'/'+now.getDate()+'（全員おなじ星の並び）';
+$('day').textContent=dayLabel;$('day2').textContent=dayLabel;
+
+const BASE=430,VMAX=1150,RANGE=340,BOUND=560,LY=200;
+let st='title',P,anchors,dust,parts,texts,trail,wave,tNow=0,rnd,nextX,lastAY,stats,hold=false,shake=0,deadT=0,cause='';
+const cam={x:0,y:0,s:.5};
+let best=0;try{best=parseFloat(localStorage.getItem('swingby_best'))||0}catch(e){}
+function showBest(){$('bestT').textContent=best>0?'自己ベスト '+best.toFixed(1)+' 光年':''}
+showBest();
+
+const bg=[];{const r=mulberry(7);for(let i=0;i<170;i++){const l=r();bg.push({x:r(),y:r(),f:l<.55?.04:l<.85?.1:.22,z:l<.55?1:l<.85?1.5:2.2,tw:r()*6.28})}}
+
+function reset(){
+  rnd=mulberry(seed);
+  P={x:0,y:0,vx:BASE,vy:0,sp:BASE,a:null,r:0,ang:0,dir:1,near:null,nd:1e9,rot:0};
+  anchors=[];dust=[];parts=[];texts=[];trail=[];
+  wave={x:-1000,v:250};tNow=0;nextX=270;lastAY=0;shake=0;
+  stats={dist:0,maxSp:BASE,perfect:0,dust:0,near:0,swings:0,combo:0,chain:0};
+  gen();cam.x=P.x;cam.y=0;
+}
+function gen(){
+  while(nextX<P.x+2800){
+    let y;do{y=(rnd()*2-1)*380}while(Math.abs(y-lastAY)<120);
+    lastAY=y;
+    const d=Math.min(1,nextX/70000);
+    anchors.push({x:nextX,y,R:16+rnd()*14,h:rnd()*360|0,ring:rnd()<.3,nm:false,ph:rnd()*6.28});
+    if(rnd()<.75){const dy=(rnd()*2-1)*430;for(let i=0;i<4;i++)dust.push({x:nextX+95+i*38,y:dy+Math.sin(i*.9)*16,got:false})}
+    nextX+=250+rnd()*110+d*120;
+  }
+}
+
+// ---- 音
+let AC=null,muted=false,hum=null,humG=null;
+try{muted=localStorage.getItem('swingby_mute')==='1'}catch(e){}
+$('mute').textContent=muted?'🔇':'🔊';
+function audio(){
+  if(AC){if(AC.state==='suspended')AC.resume();return}
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    hum=AC.createOscillator();hum.type='sawtooth';hum.frequency.value=90;
+    const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=520;
+    humG=AC.createGain();humG.gain.value=0;
+    hum.connect(f);f.connect(humG);humG.connect(AC.destination);hum.start();
+  }catch(e){AC=null}
+}
+function tone(fr,d,type,v,slide){
+  if(!AC||muted)return;
+  const o=AC.createOscillator(),gn=AC.createGain(),t=AC.currentTime;
+  o.type=type||'sine';o.frequency.setValueAtTime(fr,t);
+  if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,fr+slide),t+d);
+  gn.gain.setValueAtTime(v||.1,t);gn.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(gn);gn.connect(AC.destination);o.start(t);o.stop(t+d+.03);
+}
+function noise(d,v,fq){
+  if(!AC||muted)return;
+  const n=Math.floor(AC.sampleRate*d),b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);
+  for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);
+  const s=AC.createBufferSource();s.buffer=b;
+  const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=fq||1200;f.Q.value=.7;
+  const gn=AC.createGain();gn.gain.value=v||.2;
+  s.connect(f);f.connect(gn);gn.connect(AC.destination);s.start();
+}
+$('mute').addEventListener('click',e=>{e.stopPropagation();muted=!muted;$('mute').textContent=muted?'🔇':'🔊';try{localStorage.setItem('swingby_mute',muted?'1':'0')}catch(e){}if(!muted)audio()});
+
+// ---- 効果
+function burst(x,y,n,col,sp,life){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=sp*(.3+Math.random());parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:life*(.5+Math.random()*.5),m:life,c:col,z:1.5+Math.random()*2.5})}}
+function say(x,y,t,c){texts.push({x,y,t,c:c||'#fff',l:1.1})}
+
+function attach(a,d){
+  const dx=P.x-a.x,dy=P.y-a.y;
+  P.a=a;P.r=Math.max(d,a.R+26);P.ang=Math.atan2(dy,dx);
+  P.dir=(dx*P.vy-dy*P.vx)>=0?1:-1;P.rot=0;stats.swings++;
+  tone(320,.09,'triangle',.09,260);
+}
+function release(){
+  const off=Math.abs(Math.atan2(P.vy,P.vx));
+  if(off<.3&&P.rot>.6&&!P.a.pf){
+    P.a.pf=true;
+    stats.perfect++;stats.combo++;
+    P.sp=Math.min(VMAX,P.sp+70+stats.combo*10);
+    say(P.x,P.y-40,stats.combo>1?'ナイス射出！ ×'+stats.combo:'ナイス射出！','#7df9ff');
+    burst(P.x,P.y,14,'#7df9ff',260,.5);shake=Math.max(shake,5);
+    tone(660,.12,'triangle',.1,500);tone(990,.18,'sine',.07,300);
+  }else if(off>1.1)stats.combo=0;
+  const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
+  P.a=null;noise(.16,.1,900+P.sp);
+}
+function die(why){
+  if(st!=='play')return;
+  st='dead';deadT=0;cause=why;hold=false;P.a=null;
+  burst(P.x,P.y,60,'#ffb3f0',520,1.1);burst(P.x,P.y,40,'#ffffff',320,.8);shake=22;
+  noise(.7,.3,300);tone(180,.6,'sawtooth',.12,-140);
+  if(humG)humG.gain.value=0;
+}
+
+function update(dt){
+  tNow+=dt;
+  let bst=null,bd=1e9;
+  for(const a of anchors){const d=Math.hypot(a.x-P.x,a.y-P.y);if(d<bd){bd=d;bst=a}}
+  P.near=(bst&&bd<RANGE)?bst:null;P.nd=bd;
+  if(hold&&!P.a&&P.near)attach(P.near,bd);
+  if(!hold&&P.a)release();
+  if(P.a){
+    const a=P.a;
+    P.sp=Math.min(VMAX,P.sp+95*dt);
+    const w=P.sp/P.r*P.dir;
+    P.ang+=w*dt;P.rot+=Math.abs(w)*dt;
+    P.x=a.x+Math.cos(P.ang)*P.r;P.y=a.y+Math.sin(P.ang)*P.r;
+    P.vx=-Math.sin(P.ang)*P.sp*P.dir;P.vy=Math.cos(P.ang)*P.sp*P.dir;
+  }else{
+    P.x+=P.vx*dt;P.y+=P.vy*dt;
+    if(P.sp>BASE){P.sp=Math.max(BASE,P.sp-30*dt);const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k}
+    if(P.y>BOUND&&P.vy>0){P.y=BOUND;P.vy=-P.vy;burst(P.x,P.y,10,'#ff8ad8',200,.4);tone(140,.1,'square',.06,-40);shake=Math.max(shake,4)}
+    if(P.y<-BOUND&&P.vy<0){P.y=-BOUND;P.vy=-P.vy;burst(P.x,P.y,10,'#ff8ad8',200,.4);tone(140,.1,'square',.06,-40);shake=Math.max(shake,4)}
+    for(const a of anchors){
+      const d=Math.hypot(a.x-P.x,a.y-P.y);
+      if(d<a.R+7){die('星に衝突');return}
+      if(d<a.R+40&&!a.nm){a.nm=true;stats.near++;P.sp=Math.min(VMAX,P.sp+45);say(a.x,a.y-a.R-26,'ニアミス！','#ffd86b');tone(880,.1,'square',.05,200);shake=Math.max(shake,6)}
+    }
+  }
+  for(const d of dust){
+    if(d.got)continue;
+    if(Math.abs(d.x-P.x)<38&&Math.abs(d.y-P.y)<38){d.got=true;stats.dust++;stats.chain=Math.min(12,stats.chain+1);tone(520*Math.pow(1.0595,stats.chain*2),.14,'sine',.08);burst(d.x,d.y,6,'#ffe9a8',140,.4)}
+  }
+  wave.v=Math.min(950,250+tNow*6.5);
+  wave.x+=wave.v*dt;if(wave.x<P.x-1250)wave.x=P.x-1250;
+  if(P.x<wave.x+8){die('波に飲まれた');return}
+  stats.dist=Math.max(stats.dist,P.x/LY);
+  stats.maxSp=Math.max(stats.maxSp,P.sp);
+  trail.push({x:P.x,y:P.y});if(trail.length>46)trail.shift();
+  gen();
+  while(anchors.length&&anchors[0].x<wave.x-400)anchors.shift();
+  while(dust.length&&dust[0].x<wave.x-400)dust.shift();
+  if(humG&&AC){humG.gain.value=(P.a&&!muted)?.035:0;hum.frequency.value=70+P.sp*.16}
+}
+function fx(dt){
+  for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.l-=dt;if(p.l<=0){parts.splice(i,1);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.985;p.vy*=.985}
+  for(let i=texts.length-1;i>=0;i--){const t=texts[i];t.l-=dt;t.y-=40*dt;if(t.l<=0)texts.splice(i,1)}
+  shake*=Math.pow(.002,dt);
+  const sf=(P.sp-BASE)/(VMAX-BASE);
+  const ts=Math.min(H/1250,W/760)*(1-.16*sf);
+  cam.s+=(ts-cam.s)*Math.min(1,dt*3);
+  cam.x=P.x+(W*.17)/cam.s;
+  cam.y+=(P.y*.55-cam.y)*Math.min(1,dt*4);
+}
+function spPct(v){return Math.round(v/VMAX*99)}
+function rankOf(d){return d<20?'宇宙ごみ':d<50?'流れ星':d<90?'彗星':d<140?'探査機':d<200?'恒星間パイロット':'銀河の旅人'}
+function showResult(){
+  st='result';
+  const d=stats.dist;let nb=false;
+  if(d>best){best=d;nb=true;try{localStorage.setItem('swingby_best',String(best))}catch(e){}}
+  $('cause').textContent=cause;
+  $('rDist').textContent=d.toFixed(1);
+  $('rRank').textContent=rankOf(d);
+  $('rNew').textContent=nb?'自己ベスト更新！':'';
+  $('rSp').textContent='光速の '+spPct(stats.maxSp)+'%';
+  $('rPf').textContent=stats.perfect+' 回';
+  $('rDu').textContent=stats.dust+' 個';
+  $('rNm').textContent=stats.near+' 回';
+  $('rBest').textContent=best.toFixed(1)+' 光年';
+  $('result').hidden=false;showBest();
+}
+function start(){audio();reset();$('title').hidden=true;$('result').hidden=true;st='play';hold=false;tone(440,.1,'triangle',.08,300)}
+
+// ---- 描画
+function draw(){
+  g.setTransform(DPR,0,0,DPR,0,0);
+  const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#060a1e');gr.addColorStop(.55,'#0c0b28');gr.addColorStop(1,'#1a0b30');
+  g.fillStyle=gr;g.fillRect(0,0,W,H);
+  const sf=Math.max(0,(P.sp-BASE)/(VMAX-BASE));
+  const moving=st==='play';
+  g.lineCap='round';
+  for(const s of bg){
+    const x=(((s.x*W-cam.x*s.f*cam.s)%W)+W)%W,y=(((s.y*H-cam.y*s.f*cam.s)%H)+H)%H;
+    const al=.35+.35*Math.sin(tNow*2+s.tw)+s.f*2;
+    g.strokeStyle='rgba(215,230,255,'+Math.min(1,al)+')';g.lineWidth=s.z;
+    const k=moving?s.f*cam.s*.045*(1+sf*1.5):0;
+    g.beginPath();g.moveTo(x,y);g.lineTo(x-P.vx*k-.01,y-P.vy*k);g.stroke();
+  }
+  const shx=(Math.random()-.5)*shake,shy=(Math.random()-.5)*shake;
+  g.save();g.translate(W/2+shx,H/2+shy);g.scale(cam.s,cam.s);g.translate(-cam.x,-cam.y);
+  const vl=cam.x-W/2/cam.s-80,vr=cam.x+W/2/cam.s+80,vt=cam.y-H/2/cam.s-80,vb=cam.y+H/2/cam.s+80;
+  // 境界（はね返る星雲）
+  for(const sgn of[-1,1]){
+    const y0=sgn*BOUND,gg=g.createLinearGradient(0,y0,0,y0+sgn*260);
+    gg.addColorStop(0,'rgba(255,90,200,.34)');gg.addColorStop(1,'rgba(255,90,200,0)');
+    g.fillStyle=gg;g.fillRect(vl,Math.min(y0,y0+sgn*260),vr-vl,260);
+    g.strokeStyle='rgba(255,150,225,.7)';g.lineWidth=3;g.setLineDash([18,14]);g.lineDashOffset=-tNow*40;
+    g.beginPath();g.moveTo(vl,y0);g.lineTo(vr,y0);g.stroke();g.setLineDash([]);
+  }
+  // 星くず
+  for(const d of dust){if(d.got||d.x<vl||d.x>vr)continue;const r=6+Math.sin(tNow*6+d.x)*1.5;g.fillStyle='rgba(255,233,168,.25)';g.beginPath();g.arc(d.x,d.y,r*2.2,0,6.283);g.fill();g.fillStyle='#ffe9a8';g.beginPath();g.arc(d.x,d.y,r,0,6.283);g.fill()}
+  // 星
+  for(const a of anchors){
+    if(a.x<vl-RANGE||a.x>vr+RANGE)continue;
+    const glow=g.createRadialGradient(a.x,a.y,a.R*.6,a.x,a.y,a.R*3.2);
+    glow.addColorStop(0,'hsla('+a.h+',90%,70%,.5)');glow.addColorStop(1,'hsla('+a.h+',90%,70%,0)');
+    g.fillStyle=glow;g.beginPath();g.arc(a.x,a.y,a.R*3.2,0,6.283);g.fill();
+    const body=g.createRadialGradient(a.x-a.R*.35,a.y-a.R*.35,a.R*.1,a.x,a.y,a.R);
+    body.addColorStop(0,'hsl('+a.h+',95%,88%)');body.addColorStop(1,'hsl('+a.h+',75%,48%)');
+    g.fillStyle=body;g.beginPath();g.arc(a.x,a.y,a.R,0,6.283);g.fill();
+    if(a.ring){g.strokeStyle='hsla('+a.h+',80%,85%,.75)';g.lineWidth=3;g.beginPath();g.ellipse(a.x,a.y,a.R*1.9,a.R*.55,a.ph,0,6.283);g.stroke()}
+  }
+  // つかまれる星の目印
+  if(st==='play'&&!P.a&&P.near){
+    const a=P.near;
+    g.strokeStyle='rgba(125,249,255,.32)';g.lineWidth=2;g.setLineDash([8,10]);
+    g.beginPath();g.arc(a.x,a.y,Math.max(P.nd,a.R+26),0,6.283);g.stroke();
+    g.beginPath();g.moveTo(a.x,a.y);g.lineTo(P.x,P.y);g.stroke();g.setLineDash([]);
+  }
+  // 波
+  if(wave.x>vl){
+    const wg=g.createLinearGradient(wave.x-700,0,wave.x,0);
+    wg.addColorStop(0,'rgba(120,20,160,.95)');wg.addColorStop(.8,'rgba(255,60,140,.85)');wg.addColorStop(1,'rgba(255,200,120,.95)');
+    g.fillStyle=wg;g.beginPath();g.moveTo(vl,vt);
+    for(let y=vt;y<=vb;y+=40)g.lineTo(wave.x+Math.sin(y*.013+tNow*5)*26+Math.sin(y*.041-tNow*8)*12,y);
+    g.lineTo(vl,vb);g.closePath();g.fill();
+  }
+  // ロープ
+  if(P.a){
+    const a=P.a;
+    g.strokeStyle='rgba(125,249,255,.16)';g.lineWidth=2;g.beginPath();g.arc(a.x,a.y,P.r,0,6.283);g.stroke();
+    g.strokeStyle='rgba(125,249,255,.28)';g.lineWidth=9;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(P.x,P.y);g.stroke();
+    g.strokeStyle='#dffcff';g.lineWidth=2.5;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(P.x,P.y);g.stroke();
+    const ux=P.vx/P.sp,uy=P.vy/P.sp,ok=Math.abs(Math.atan2(uy,ux))<.3;
+    g.strokeStyle=ok?'rgba(125,249,255,.95)':'rgba(255,255,255,.4)';g.lineWidth=ok?4:2.5;g.setLineDash([10,12]);
+    g.beginPath();g.moveTo(P.x+ux*20,P.y+uy*20);g.lineTo(P.x+ux*300,P.y+uy*300);g.stroke();g.setLineDash([]);
+  }
+  // 尾
+  for(let i=1;i<trail.length;i++){
+    const t=i/trail.length;
+    g.strokeStyle='hsla('+(190-sf*150)+',100%,'+(70+sf*10)+'%,'+(t*.8)+')';g.lineWidth=2+t*9;
+    g.beginPath();g.moveTo(trail[i-1].x,trail[i-1].y);g.lineTo(trail[i].x,trail[i].y);g.stroke();
+  }
+  // 自機
+  if(st!=='dead'&&st!=='result'){
+    const pg=g.createRadialGradient(P.x,P.y,2,P.x,P.y,30);pg.addColorStop(0,'rgba(255,255,255,.9)');pg.addColorStop(1,'rgba(125,249,255,0)');
+    g.fillStyle=pg;g.beginPath();g.arc(P.x,P.y,30,0,6.283);g.fill();
+    g.save();g.translate(P.x,P.y);g.rotate(Math.atan2(P.vy,P.vx));
+    g.fillStyle='#fff';g.beginPath();g.moveTo(15,0);g.lineTo(-9,8);g.lineTo(-4,0);g.lineTo(-9,-8);g.closePath();g.fill();g.restore();
+  }
+  for(const p of parts){g.globalAlpha=Math.max(0,p.l/p.m);g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,p.z,0,6.283);g.fill()}
+  g.globalAlpha=1;
+  g.textAlign='center';g.font='900 30px system-ui,-apple-system,"Hiragino Sans",sans-serif';
+  for(const t of texts){g.globalAlpha=Math.min(1,t.l*2);g.fillStyle=t.c;g.fillText(t.t,t.x,t.y)}
+  g.globalAlpha=1;g.restore();
+  // 画面の表示
+  if(st==='play'||st==='dead'){
+    const gap=P.x-wave.x;
+    if(gap<750){const al=Math.min(.6,(750-gap)/750*.7)*(.7+.3*Math.sin(tNow*14));const wg=g.createLinearGradient(0,0,W*.3,0);wg.addColorStop(0,'rgba(255,50,120,'+al+')');wg.addColorStop(1,'rgba(255,50,120,0)');g.fillStyle=wg;g.fillRect(0,0,W*.3,H)}
+    const top=10;
+    g.textAlign='center';g.fillStyle='#fff';g.font='900 '+Math.round(Math.min(54,W*.12))+'px system-ui,-apple-system,"Hiragino Sans",sans-serif';
+    g.shadowColor='rgba(125,249,255,.6)';g.shadowBlur=14;
+    g.fillText(stats.dist.toFixed(1),W/2,top+50);g.shadowBlur=0;
+    g.font='700 14px system-ui,-apple-system,"Hiragino Sans",sans-serif';g.fillStyle='rgba(234,242,255,.8)';
+    g.fillText('光年',W/2,top+72);
+    const bw=Math.min(220,W*.5),bx=W/2-bw/2,by=top+84;
+    g.fillStyle='rgba(255,255,255,.14)';g.fillRect(bx,by,bw,6);
+    g.fillStyle='hsl('+(190-sf*150)+',100%,65%)';g.fillRect(bx,by,bw*Math.min(1,P.sp/VMAX),6);
+    g.fillStyle='rgba(234,242,255,.8)';g.font='700 12px system-ui,-apple-system,"Hiragino Sans",sans-serif';
+    g.fillText('光速の '+spPct(P.sp)+'%',W/2,by+22);
+    if(st==='play'&&tNow<4&&stats.swings===0){
+      g.font='800 '+Math.round(Math.min(22,W*.05))+'px system-ui,-apple-system,"Hiragino Sans",sans-serif';g.fillStyle='rgba(125,249,255,'+(.6+.4*Math.sin(tNow*8))+')';
+      g.fillText('画面を押して、星につかまれ',W/2,H-70);
+    }
+  }
+}
+
+// ---- 入力
+function down(e){if(e&&e.target&&e.target.closest&&e.target.closest('button'))return;audio();if(st==='play')hold=true}
+function up(){hold=false}
+window.addEventListener('pointerdown',down);
+window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+window.addEventListener('blur',up);
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='Enter'){e.preventDefault();if(e.repeat)return;if(st==='play')hold=true;else if(st==='title'||st==='result')start()}
+});
+window.addEventListener('keyup',e=>{if(e.code==='Space'||e.code==='Enter')hold=false});
+for(const ev of['contextmenu','gesturestart','dblclick','selectstart'])document.addEventListener(ev,e=>e.preventDefault());
+document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+$('start').addEventListener('click',start);
+$('again').addEventListener('click',start);
+$('share').addEventListener('click',()=>{
+  const t='スイングバイで '+stats.dist.toFixed(1)+' 光年 飛んだ（'+rankOf(stats.dist)+'・最高は光速の'+spPct(stats.maxSp)+'%）\n今日のコースは全員おなじ。 #スイングバイ';
+  window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://nosunosukawa.github.io/swingby/'),'_blank','noopener');
+});
+
+// ---- ループ
+let last=0;
+function frame(ts){
+  requestAnimationFrame(frame);
+  if(document.hidden){last=0;return}
+  if(!last){last=ts;return}
+  let dt=Math.min(1/30,(ts-last)/1000);last=ts;
+  if(st==='play'){update(dt/2);if(st==='play')update(dt/2)}
+  else if(st==='dead'){deadT+=dt;tNow+=dt;if(deadT>1.1)showResult()}
+  else{tNow+=dt;if(st==='title'){P.x+=120*dt;trail.push({x:P.x,y:P.y});if(trail.length>46)trail.shift();gen()}}
+  fx(dt);draw();
+}
+document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden){hold=false;if(humG)humG.gain.value=0}});
+reset();
+requestAnimationFrame(frame);
+
+// 検証用の覗き口（読むだけ）
+window.__test={state:()=>({st,x:P.x,y:P.y,vx:P.vx,vy:P.vy,sp:P.sp,tethered:!!P.a,anchor:P.a?{x:P.a.x,y:P.a.y,R:P.a.R}:null,r:P.r,dir:P.dir,near:P.near?{x:P.near.x,y:P.near.y,R:P.near.R}:null,nd:P.nd,wave:wave.x,dist:stats.dist,t:tNow,anchors:anchors.filter(a=>a.x>P.x-400&&a.x<P.x+900).map(a=>({x:a.x,y:a.y,R:a.R})),stats:Object.assign({},stats)})};
+})();
+</script>
+</body>
+</html>
