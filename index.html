@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>スイングバイ — 星につかまって、銀河を飛べ</title>
-<meta name="description" content="押している間だけ近くの星につかまって回る。離すと飛び出す。ボタンひとつで銀河を何光年飛べるか。毎日コースが変わるブラウザゲーム。">
-<meta property="og:title" content="スイングバイ — 星につかまって、銀河を飛べ">
-<meta property="og:description" content="押すとつかまる。離すと飛び出す。ボタンひとつで銀河を何光年飛べるか。">
+<title>ほしづたい — 波に追われて、星から星へ</title>
+<meta name="description" content="押している間だけ星につかまって回り、離すと飛び出す。巨星・パルサー・ブラックホールを使い分け、後ろから迫る波に乗って何光年飛べるか。星の並びは毎日変わり、その日は全員おなじ。">
+<meta property="og:title" content="ほしづたい — 波に追われて、星から星へ">
+<meta property="og:description" content="星から星へ伝って飛ぶ。迫る波には、乗ってしまえ。今日の星の並びは全員おなじ。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nosunosukawa.github.io/swingby/">
 <meta name="twitter:card" content="summary">
@@ -30,9 +30,14 @@ button.ghost{background:transparent;color:#eaf2ff;border:1.5px solid rgba(234,24
 .big{font-size:clamp(54px,16vw,110px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
 .big small{font-size:.32em;font-weight:700;margin-left:.2em;opacity:.85}
 .rank{font-size:clamp(20px,6vw,30px);font-weight:800;color:#ffd86b;letter-spacing:.1em}
-.stats{display:grid;grid-template-columns:repeat(2,auto);gap:4px 22px;font-size:clamp(13px,3.7vw,16px);text-align:left;opacity:.92}
+.stats{display:grid;grid-template-columns:repeat(4,auto);gap:4px 12px;font-size:clamp(13px,3.7vw,16px);text-align:left;opacity:.92}
 .stats span:nth-child(even){text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
 .nb{color:#7df9ff;font-weight:800;font-size:15px;min-height:1.3em}
+.rw{display:flex;gap:14px 28px;flex-wrap:wrap;justify-content:center;align-items:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:10px}
+#map{position:static;display:block;max-width:min(88vw,520px);max-height:34vh;width:auto;height:auto;border-radius:12px;border:1px solid rgba(255,255,255,.2)}
+.kinds{display:flex;gap:5px 14px;flex-wrap:wrap;justify-content:center;font-size:clamp(11.5px,3.1vw,13.5px);opacity:.9;max-width:36em;line-height:1.5}
+.kinds i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 #mute{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:42px;height:42px;padding:0;border-radius:50%;font-size:19px;background:rgba(255,255,255,.1);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.25);z-index:5}
 </style>
 </head>
@@ -40,30 +45,40 @@ button.ghost{background:transparent;color:#eaf2ff;border:1.5px solid rgba(234,24
 <canvas id="c"></canvas>
 <button id="mute" aria-label="音の切り替え">🔊</button>
 <div class="ov" id="title">
-  <div class="sub">ボタンひとつの宇宙飛行</div>
-  <h1>スイングバイ</h1>
-  <p class="how"><b>押している間</b>、近くの星につかまって回る。<br><b>離す</b>と、その向きに飛び出す。<br>回るほど速くなる。後ろから来る<b>波</b>に飲まれたら終わり。</p>
+  <div class="sub">波に追われて、星から星へ</div>
+  <h1>ほしづたい</h1>
+  <p class="how"><b>押している間</b>、近くの星につかまって回る。<b>離す</b>と、その向きに飛び出す。<br>後ろから来る<b>波</b>に飲まれたら終わり。ただし波のすぐ前は<b>波乗り</b>で加速する。</p>
+  <div class="kinds"><span><i style="background:#8fd0ff"></i>ふつうの星</span><span><i style="background:#ff9a5a"></i>巨星：大きく回って強く射出</span><span><i style="background:#e8fbff"></i>パルサー：一気に加速。長居すると弾かれる</span><span><i style="background:#b06bff"></i>ブラックホール：吸い込まれる前に離すと大加速</span></div>
   <div class="day" id="day"></div>
   <button id="start">スタート</button>
   <div class="day" id="bestT"></div>
 </div>
 <div class="ov" id="result" hidden>
-  <div class="sub" id="cause"></div>
-  <div class="big"><span id="rDist">0</span><small>光年</small></div>
-  <div class="rank" id="rRank"></div>
-  <div class="nb" id="rNew"></div>
-  <div class="stats">
-    <span>最高速度</span><span id="rSp"></span>
-    <span>ナイス射出</span><span id="rPf"></span>
-    <span>星くず</span><span id="rDu"></span>
-    <span>ニアミス</span><span id="rNm"></span>
-    <span>自己ベスト</span><span id="rBest"></span>
+  <div class="rw">
+    <div class="col">
+      <div class="sub" id="cause"></div>
+      <div class="big"><span id="rDist">0</span><small>光年</small></div>
+      <div class="rank" id="rRank"></div>
+      <div class="nb" id="rNew"></div>
+      <div class="stats">
+        <span>最高速度</span><span id="rSp"></span>
+        <span>ナイス射出</span><span id="rPf"></span>
+        <span>波乗り</span><span id="rSu"></span>
+        <span>重力ターン</span><span id="rTn"></span>
+        <span>星くず</span><span id="rDu"></span>
+        <span>自己ベスト</span><span id="rBest"></span>
+      </div>
+    </div>
+    <div class="col">
+      <canvas id="map" width="1200" height="446" aria-label="今日の航路図"></canvas>
+      <div class="row">
+        <button id="again">もう一度</button>
+        <button id="share" class="ghost">X に投稿</button>
+        <button id="save" class="ghost">航路図を保存</button>
+      </div>
+      <div class="day" id="day2"></div>
+    </div>
   </div>
-  <div class="row">
-    <button id="again">もう一度</button>
-    <button id="share" class="ghost">X に投稿</button>
-  </div>
-  <div class="day" id="day2"></div>
 </div>
 <script>
 (()=>{
@@ -81,8 +96,9 @@ const seed=now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
 const dayLabel='今日のコース '+(now.getMonth()+1)+'/'+now.getDate()+'（全員おなじ星の並び）';
 $('day').textContent=dayLabel;$('day2').textContent=dayLabel;
 
+const NAME='ほしづたい';
 const BASE=430,VMAX=1150,RANGE=340,BOUND=560,LY=200;
-let st='title',P,anchors,dust,parts,texts,trail,wave,tNow=0,rnd,nextX,lastAY,stats,hold=false,shake=0,deadT=0,cause='';
+let st='title',P,anchors,allStars=[],route=[],marks=[],routeT=0,ghost=null,dust,parts,texts,trail,wave,tNow=0,rnd,nextX,lastAY,stats,hold=false,shake=0,deadT=0,cause='';
 const cam={x:0,y:0,s:.5};
 let best=0;try{best=parseFloat(localStorage.getItem('swingby_best'))||0}catch(e){}
 function showBest(){$('bestT').textContent=best>0?'自己ベスト '+best.toFixed(1)+' 光年':''}
@@ -92,10 +108,12 @@ const bg=[];{const r=mulberry(7);for(let i=0;i<170;i++){const l=r();bg.push({x:r
 
 function reset(){
   rnd=mulberry(seed);
-  P={x:0,y:0,vx:BASE,vy:0,sp:BASE,a:null,r:0,ang:0,dir:1,near:null,nd:1e9,rot:0};
-  anchors=[];dust=[];parts=[];texts=[];trail=[];
+  P={x:0,y:0,vx:BASE,vy:0,sp:BASE,a:null,r:0,r0:0,ang:0,dir:1,near:null,nd:1e9,rot:0,surf:false,surfSay:-9};
+  anchors=[];allStars=[];route=[];marks=[];routeT=0;dust=[];parts=[];texts=[];trail=[];
   wave={x:-1000,v:250};tNow=0;nextX=270;lastAY=0;shake=0;
-  stats={dist:0,maxSp:BASE,perfect:0,dust:0,near:0,swings:0,combo:0,chain:0};
+  stats={dist:0,maxSp:BASE,perfect:0,dust:0,near:0,swings:0,combo:0,chain:0,surf:0,turn:0};
+  // 今日のコースでの自己ベストの飛び方（影として一緒に飛ぶ）
+  ghost=null;try{const gj=JSON.parse(localStorage.getItem('hz_ghost')||'null');if(gj&&gj.seed===seed&&Array.isArray(gj.pts))ghost=gj}catch(e){}
   gen();cam.x=P.x;cam.y=0;
 }
 function gen(){
@@ -103,7 +121,9 @@ function gen(){
     let y;do{y=(rnd()*2-1)*380}while(Math.abs(y-lastAY)<120);
     lastAY=y;
     const d=Math.min(1,nextX/70000);
-    anchors.push({x:nextX,y,R:16+rnd()*14,h:rnd()*360|0,ring:rnd()<.3,nm:false,ph:rnd()*6.28});
+    const kr=rnd(),kind=nextX<1400?0:kr<.6?0:kr<.74?1:kr<.88?2:3;
+    const a={x:nextX,y,kind,R:kind===1?34+rnd()*10:kind===2?11:kind===3?20:16+rnd()*14,h:kind===1?(6+rnd()*24|0):kind===2?188:kind===3?272:(rnd()*360|0),ring:kind===0&&rnd()<.3,nm:false,ph:rnd()*6.28,cool:0};
+    anchors.push(a);allStars.push(a);
     if(rnd()<.75){const dy=(rnd()*2-1)*430;for(let i=0;i<4;i++)dust.push({x:nextX+95+i*38,y:dy+Math.sin(i*.9)*16,got:false})}
     nextX+=250+rnd()*110+d*120;
   }
@@ -148,19 +168,30 @@ function say(x,y,t,c){texts.push({x,y,t,c:c||'#fff',l:1.1})}
 
 function attach(a,d){
   const dx=P.x-a.x,dy=P.y-a.y;
-  P.a=a;P.r=Math.max(d,a.R+26);P.ang=Math.atan2(dy,dx);
+  P.a=a;P.r=P.r0=Math.max(d,a.R+26);P.ang=Math.atan2(dy,dx);
   P.dir=(dx*P.vy-dy*P.vx)>=0?1:-1;P.rot=0;stats.swings++;
   tone(320,.09,'triangle',.09,260);
 }
-function release(){
-  const off=Math.abs(Math.atan2(P.vy,P.vx));
-  if(off<.3&&P.rot>.6&&!P.a.pf){
-    P.a.pf=true;
-    stats.perfect++;stats.combo++;
-    P.sp=Math.min(VMAX,P.sp+45+Math.min(10,stats.combo)*5);
-    say(P.x,P.y-40,stats.combo>1?'ナイス射出！ ×'+stats.combo:'ナイス射出！','#7df9ff');
-    burst(P.x,P.y,14,'#7df9ff',260,.5);shake=Math.max(shake,5);
+function release(forced){
+  const a=P.a,off=Math.abs(Math.atan2(P.vy,P.vx));
+  if(!forced&&off<.3&&P.rot>.6&&!a.pf){
+    a.pf=true;stats.perfect++;stats.combo++;
+    let bonus=45+Math.min(10,stats.combo)*5,msg=stats.combo>1?'ナイス射出！ ×'+stats.combo:'ナイス射出！',col='#7df9ff';
+    if(a.kind===1){bonus+=70;msg='巨星スイング！'+(stats.combo>1?' ×'+stats.combo:'');col='#ffb37a'}
+    if(a.kind===3){
+      // ブラックホールは、吸い込まれた深さに応じて強く飛び出す
+      const deep=Math.max(0,Math.min(1,1-(P.r-a.R-12)/Math.max(1,P.r0-a.R-12)));
+      bonus+=50+deep*210;stats.turn++;msg='重力ターン！'+(deep>.6?' 深い！':'');col='#d7a8ff';
+    }
+    P.sp=Math.min(VMAX,P.sp+bonus);
+    marks.push(Math.round(P.x),Math.round(P.y));
+    say(P.x,P.y-40,msg,col);burst(P.x,P.y,14,col,260,.5);shake=Math.max(shake,5);
     tone(660,.12,'triangle',.1,500);tone(990,.18,'sine',.07,300);
+  }else if(forced){
+    // パルサーに長居して弾かれた
+    stats.combo=0;a.cool=tNow+1.5;
+    say(P.x,P.y-40,'はじかれた！','#9fe8ff');burst(P.x,P.y,16,'#9fe8ff',300,.5);shake=Math.max(shake,8);
+    tone(1200,.15,'square',.06,-700);
   }else if(off>1.1)stats.combo=0;
   const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
   P.a=null;noise(.16,.1,900+P.sp);
@@ -174,7 +205,7 @@ function bounce(){
 }
 function die(why){
   if(st!=='play')return;
-  st='dead';deadT=0;cause=why;hold=false;P.a=null;
+  st='dead';deadT=0;cause=why;hold=false;P.a=null;route.push(Math.round(P.x),Math.round(P.y),Math.round(P.sp));
   burst(P.x,P.y,60,'#ffb3f0',520,1.1);burst(P.x,P.y,40,'#ffffff',320,.8);shake=22;
   noise(.7,.3,300);tone(180,.6,'sawtooth',.12,-140);
   if(humG)humG.gain.value=0;
@@ -183,25 +214,30 @@ function die(why){
 function update(dt){
   tNow+=dt;
   let bst=null,bd=1e9;
-  for(const a of anchors){const d=Math.hypot(a.x-P.x,a.y-P.y);if(d<bd){bd=d;bst=a}}
+  for(const a of anchors){if(a.cool>tNow)continue;const d=Math.hypot(a.x-P.x,a.y-P.y);if(d<bd){bd=d;bst=a}}
   P.near=(bst&&bd<RANGE)?bst:null;P.nd=bd;
   if(hold&&!P.a&&P.near)attach(P.near,bd);
   if(!hold&&P.a)release();
   if(P.a){
     const a=P.a;
-    P.sp=Math.min(VMAX,P.sp+70*dt);
+    P.sp=Math.min(VMAX,P.sp+(a.kind===2?240:a.kind===3?140:a.kind===1?55:70)*dt);
+    if(a.kind===3){P.r-=78*dt;if(P.r<a.R+12){die('ブラックホールに落ちた');return}}
     const w=P.sp/P.r*P.dir;
     P.ang+=w*dt;P.rot+=Math.abs(w)*dt;
     P.x=a.x+Math.cos(P.ang)*P.r;P.y=a.y+Math.sin(P.ang)*P.r;
     P.vx=-Math.sin(P.ang)*P.sp*P.dir;P.vy=Math.cos(P.ang)*P.sp*P.dir;
+    if(a.kind===2&&P.rot>7.5)release(true);
   }else{
     P.x+=P.vx*dt;P.y+=P.vy*dt;
-    if(P.sp>BASE){P.sp=Math.max(BASE,P.sp-30*dt);const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k}
+    if(P.sp>BASE)P.sp=Math.max(BASE,P.sp-30*dt);
+    // ブラックホールの近くでは、飛ぶ向きが曲がる
+    for(const a of anchors){if(a.kind!==3)continue;const dx=a.x-P.x,dy=a.y-P.y,d2=dx*dx+dy*dy;if(d2<96100){const d=Math.sqrt(d2),gv=Math.min(950,5.2e6/d2);P.vx+=dx/d*gv*dt;P.vy+=dy/d*gv*dt}}
+    {const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k}
     if(P.y>BOUND&&P.vy>0){P.y=BOUND;bounce()}
     if(P.y<-BOUND&&P.vy<0){P.y=-BOUND;bounce()}
     for(const a of anchors){
       const d=Math.hypot(a.x-P.x,a.y-P.y);
-      if(d<a.R+7){die('星に衝突');return}
+      if(d<a.R+7){die(a.kind===3?'ブラックホールに落ちた':'星に衝突');return}
       if(d<a.R+40&&!a.nm){a.nm=true;stats.near++;P.sp=Math.min(VMAX,P.sp+45);say(a.x,a.y-a.R-26,'ニアミス！','#ffd86b');tone(880,.1,'square',.05,200);shake=Math.max(shake,6)}
     }
   }
@@ -212,6 +248,15 @@ function update(dt){
   wave.v=Math.min(950,220+tNow*6.5);
   wave.x+=wave.v*dt;if(wave.x<P.x-1500)wave.x=P.x-1500;
   if(P.x<wave.x+8){die('波に飲まれた');return}
+  // 波乗り：波のすぐ前を前向きに飛んでいる間は加速する
+  P.surf=!P.a&&P.x-wave.x<300&&P.vx>0;
+  if(P.surf){
+    stats.surf+=dt;P.sp=Math.min(VMAX,P.sp+170*dt);
+    const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
+    if(Math.random()<.5)parts.push({x:P.x-10,y:P.y+(Math.random()-.5)*14,vx:-120-Math.random()*120,vy:(Math.random()-.5)*80,l:.4,m:.4,c:'#ffd86b',z:2+Math.random()*2});
+    if(tNow-P.surfSay>2.5){P.surfSay=tNow;say(P.x,P.y-46,'波乗り！','#ffd86b');tone(520,.2,'sawtooth',.05,400)}
+  }
+  routeT+=dt;if(routeT>=.1){routeT-=.1;if(route.length<9000)route.push(Math.round(P.x),Math.round(P.y),Math.round(P.sp))}
   stats.dist=Math.max(stats.dist,P.x/LY);
   stats.maxSp=Math.max(stats.maxSp,P.sp);
   trail.push({x:P.x,y:P.y});if(trail.length>46)trail.shift();
@@ -243,9 +288,55 @@ function showResult(){
   $('rSp').textContent='光速の '+spPct(stats.maxSp)+'%';
   $('rPf').textContent=stats.perfect+' 回';
   $('rDu').textContent=stats.dust+' 個';
-  $('rNm').textContent=stats.near+' 回';
+  $('rSu').textContent=stats.surf.toFixed(1)+' 秒';
+  $('rTn').textContent=stats.turn+' 回';
   $('rBest').textContent=best.toFixed(1)+' 光年';
+  const old=ghost;
+  if(!ghost||d>ghost.dist){const pts=[];for(let i=0;i<route.length;i+=3)pts.push(route[i],route[i+1]);try{localStorage.setItem('hz_ghost',JSON.stringify({seed,dist:d,pts}))}catch(e){}}
+  drawMap(d,old);
   $('result').hidden=false;showBest();
+}
+
+// 航路図：今日の星の並びの上に、飛んだ道すじを描く（結果画面と保存用の画像）
+function drawMap(d,old){
+  const mc=$('map'),m=mc.getContext('2d');
+  const endX=Math.max(P.x,d*LY),maxX=Math.max(3200,endX+400);
+  const rowW=Math.max(5400,Math.ceil(maxX/3)),rows=Math.min(3,Math.ceil(maxX/rowW)),sc=1160/rowW,rowH=(BOUND*2+120)*sc;
+  const Wm=1200,Hm=Math.round(124+rows*(rowH+14)+44);
+  mc.width=Wm;mc.height=Hm;
+  const F='system-ui,-apple-system,"Hiragino Sans","Yu Gothic UI",sans-serif';
+  const bgG=m.createLinearGradient(0,0,0,Hm);bgG.addColorStop(0,'#070b1f');bgG.addColorStop(1,'#1a0b30');m.fillStyle=bgG;m.fillRect(0,0,Wm,Hm);
+  m.fillStyle='#fff';m.font='900 46px '+F;m.textAlign='left';m.fillText(NAME,24,62);
+  m.font='700 22px '+F;m.fillStyle='rgba(234,242,255,.75)';m.fillText('航路図 '+(now.getMonth()+1)+'/'+now.getDate()+'（今日の星の並びは全員おなじ）',26,98);
+  m.textAlign='right';m.fillStyle='#7df9ff';m.font='900 60px '+F;m.fillText(d.toFixed(1)+' 光年',Wm-24,66);
+  m.font='800 24px '+F;m.fillStyle='#ffd86b';m.fillText(rankOf(d),Wm-24,100);
+  const col=['#8fd0ff','#ff9a5a','#e8fbff','#b06bff'];
+  for(let r=0;r<rows;r++){
+    const x0=r*rowW,top=124+r*(rowH+14),cy=top+rowH/2;
+    const X=x=>20+(x-x0)*sc,Y=y=>cy+y*sc;
+    m.save();m.beginPath();m.rect(20,top,1160,rowH);m.clip();
+    m.fillStyle='rgba(255,255,255,.045)';m.fillRect(20,top,1160,rowH);
+    m.strokeStyle='rgba(255,150,225,.45)';m.lineWidth=1.5;m.setLineDash([6,6]);
+    for(const sg of[-1,1]){m.beginPath();m.moveTo(20,Y(sg*BOUND));m.lineTo(1180,Y(sg*BOUND));m.stroke()}
+    m.setLineDash([]);
+    if(wave.x>x0&&wave.x<x0+rowW){const wx=X(wave.x),wg=m.createLinearGradient(wx-90,0,wx,0);wg.addColorStop(0,'rgba(255,60,140,0)');wg.addColorStop(1,'rgba(255,60,140,.55)');m.fillStyle=wg;m.fillRect(wx-90,top,90,rowH);m.strokeStyle='rgba(255,200,120,.9)';m.lineWidth=2;m.beginPath();m.moveTo(wx,top);m.lineTo(wx,top+rowH);m.stroke()}
+    for(const a of allStars){
+      if(a.x<x0-60||a.x>x0+rowW+60)continue;
+      m.globalAlpha=a.x>endX+500?.35:1;m.fillStyle=col[a.kind];
+      m.beginPath();m.arc(X(a.x),Y(a.y),Math.max(2.4,a.R*sc*1.5),0,6.283);m.fill();
+      if(a.kind===3){m.strokeStyle='#ffc88c';m.lineWidth=1.5;m.beginPath();m.arc(X(a.x),Y(a.y),a.R*sc*1.5+3,0,6.283);m.stroke()}
+    }
+    m.globalAlpha=1;
+    if(old&&old.pts){m.strokeStyle='rgba(255,255,255,.3)';m.lineWidth=1.5;m.beginPath();for(let i=0;i<old.pts.length;i+=2){const px=X(old.pts[i]),py=Y(old.pts[i+1]);if(i)m.lineTo(px,py);else m.moveTo(px,py)}m.stroke()}
+    m.lineWidth=2.6;m.lineJoin='round';m.lineCap='round';
+    for(let i=3;i<route.length;i+=3){const sf=Math.max(0,(route[i+2]-BASE)/(VMAX-BASE));m.strokeStyle='hsl('+(190-sf*150)+',100%,68%)';m.beginPath();m.moveTo(X(route[i-3]),Y(route[i-2]));m.lineTo(X(route[i]),Y(route[i+1]));m.stroke()}
+    m.fillStyle='#ffd86b';for(let i=0;i<marks.length;i+=2){m.beginPath();m.arc(X(marks[i]),Y(marks[i+1]),4.5,0,6.283);m.fill()}
+    m.strokeStyle='#ff5a7a';m.lineWidth=3;const ex=X(P.x),ey=Y(P.y);m.beginPath();m.moveTo(ex-7,ey-7);m.lineTo(ex+7,ey+7);m.moveTo(ex+7,ey-7);m.lineTo(ex-7,ey+7);m.stroke();
+    m.restore();
+  }
+  m.textAlign='left';m.font='600 19px '+F;m.fillStyle='rgba(234,242,255,.7)';
+  m.fillText('線の色＝速さ　金の点＝ナイス射出　✕＝終わった場所　桃色の線＝波'+(old?'　白い線＝これまでの自己ベスト':''),24,Hm-16);
+  m.textAlign='right';m.fillText('#'+NAME,Wm-24,Hm-16);
 }
 function start(){audio();reset();$('title').hidden=true;$('result').hidden=true;st='play';hold=false;tone(440,.1,'triangle',.08,300)}
 
@@ -280,6 +371,23 @@ function draw(){
   // 星
   for(const a of anchors){
     if(a.x<vl-RANGE||a.x>vr+RANGE)continue;
+    if(a.kind===3){
+      g.strokeStyle='rgba(190,140,255,.12)';g.lineWidth=2;g.setLineDash([3,12]);g.beginPath();g.arc(a.x,a.y,310,0,6.283);g.stroke();g.setLineDash([]);
+      const gl=g.createRadialGradient(a.x,a.y,a.R,a.x,a.y,a.R*4.2);gl.addColorStop(0,'rgba(170,90,255,.55)');gl.addColorStop(1,'rgba(170,90,255,0)');
+      g.fillStyle=gl;g.beginPath();g.arc(a.x,a.y,a.R*4.2,0,6.283);g.fill();
+      g.strokeStyle='rgba(255,200,140,.9)';g.lineWidth=4;g.beginPath();g.ellipse(a.x,a.y,a.R*2.1,a.R*.7,a.ph+tNow*.6,0,6.283);g.stroke();
+      g.fillStyle='#05020c';g.beginPath();g.arc(a.x,a.y,a.R,0,6.283);g.fill();
+      g.strokeStyle='rgba(215,168,255,.9)';g.lineWidth=2;g.beginPath();g.arc(a.x,a.y,a.R,0,6.283);g.stroke();
+      continue;
+    }
+    if(a.kind===2){
+      const bl=.55+.45*Math.sin(tNow*14+a.ph),ba=a.ph+tNow*3.2;
+      g.strokeStyle='rgba(159,232,255,'+(.25+.35*bl)+')';g.lineWidth=5;g.beginPath();g.moveTo(a.x-Math.cos(ba)*90,a.y-Math.sin(ba)*90);g.lineTo(a.x+Math.cos(ba)*90,a.y+Math.sin(ba)*90);g.stroke();
+      const gl=g.createRadialGradient(a.x,a.y,2,a.x,a.y,a.R*4);gl.addColorStop(0,'rgba(200,245,255,'+(.5+.4*bl)+')');gl.addColorStop(1,'rgba(159,232,255,0)');
+      g.fillStyle=gl;g.beginPath();g.arc(a.x,a.y,a.R*4,0,6.283);g.fill();
+      g.fillStyle=a.cool>tNow?'#7a8a96':'#fff';g.beginPath();g.arc(a.x,a.y,a.R,0,6.283);g.fill();
+      continue;
+    }
     const glow=g.createRadialGradient(a.x,a.y,a.R*.6,a.x,a.y,a.R*3.2);
     glow.addColorStop(0,'hsla('+a.h+',90%,70%,.5)');glow.addColorStop(1,'hsla('+a.h+',90%,70%,0)');
     g.fillStyle=glow;g.beginPath();g.arc(a.x,a.y,a.R*3.2,0,6.283);g.fill();
@@ -295,6 +403,8 @@ function draw(){
     g.beginPath();g.arc(a.x,a.y,Math.max(P.nd,a.R+26),0,6.283);g.stroke();
     g.beginPath();g.moveTo(a.x,a.y);g.lineTo(P.x,P.y);g.stroke();g.setLineDash([]);
   }
+  // 波乗りできる帯
+  if(st==='play'&&wave.x>vl-300){const sg=g.createLinearGradient(wave.x,0,wave.x+300,0);sg.addColorStop(0,'rgba(255,216,107,.24)');sg.addColorStop(1,'rgba(255,216,107,0)');g.fillStyle=sg;g.fillRect(wave.x,vt,300,vb-vt)}
   // 波
   if(wave.x>vl){
     const wg=g.createLinearGradient(wave.x-700,0,wave.x,0);
@@ -307,6 +417,8 @@ function draw(){
   if(P.a){
     const a=P.a;
     g.strokeStyle='rgba(125,249,255,.16)';g.lineWidth=2;g.beginPath();g.arc(a.x,a.y,P.r,0,6.283);g.stroke();
+    if(a.kind===2){const f=Math.min(1,P.rot/7.5),c=Math.round(255*(1-f));g.strokeStyle='rgba(255,'+c+','+c+',.85)';g.lineWidth=4;g.beginPath();g.arc(a.x,a.y,a.R+16,-1.571,-1.571+6.283*(1-f));g.stroke()}
+    if(a.kind===3){g.strokeStyle='rgba(255,90,120,.9)';g.lineWidth=2.5;g.setLineDash([5,6]);g.beginPath();g.arc(a.x,a.y,a.R+12,0,6.283);g.stroke();g.setLineDash([])}
     g.strokeStyle='rgba(125,249,255,.28)';g.lineWidth=9;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(P.x,P.y);g.stroke();
     g.strokeStyle='#dffcff';g.lineWidth=2.5;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(P.x,P.y);g.stroke();
     const ux=P.vx/P.sp,uy=P.vy/P.sp,ok=Math.abs(Math.atan2(uy,ux))<.3;
@@ -316,9 +428,11 @@ function draw(){
   // 尾
   for(let i=1;i<trail.length;i++){
     const t=i/trail.length;
-    g.strokeStyle='hsla('+(190-sf*150)+',100%,'+(70+sf*10)+'%,'+(t*.8)+')';g.lineWidth=2+t*9;
+    g.strokeStyle=P.surf?'hsla(45,100%,70%,'+(t*.9)+')':'hsla('+(190-sf*150)+',100%,'+(70+sf*10)+'%,'+(t*.8)+')';g.lineWidth=2+t*9;
     g.beginPath();g.moveTo(trail[i-1].x,trail[i-1].y);g.lineTo(trail[i].x,trail[i].y);g.stroke();
   }
+  // 今日のコースでの自己ベストの影
+  if(ghost&&st==='play'){const gi=tNow/.1,i=Math.floor(gi)*2,f=gi%1,q=ghost.pts;if(i+3<q.length){const gx=q[i]+(q[i+2]-q[i])*f,gy=q[i+1]+(q[i+3]-q[i+1])*f;g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2;g.setLineDash([4,5]);g.beginPath();g.arc(gx,gy,13,0,6.283);g.stroke();g.setLineDash([]);g.fillStyle='rgba(255,255,255,.6)';g.font='700 18px system-ui,-apple-system,"Hiragino Sans",sans-serif';g.textAlign='center';g.fillText('自己ベスト',gx,gy-22)}}
   // 自機
   if(st!=='dead'&&st!=='result'){
     const pg=g.createRadialGradient(P.x,P.y,2,P.x,P.y,30);pg.addColorStop(0,'rgba(255,255,255,.9)');pg.addColorStop(1,'rgba(125,249,255,0)');
@@ -368,8 +482,17 @@ document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 $('start').addEventListener('click',start);
 $('again').addEventListener('click',start);
 $('share').addEventListener('click',()=>{
-  const t='スイングバイで '+stats.dist.toFixed(1)+' 光年 飛んだ（'+rankOf(stats.dist)+'・最高は光速の'+spPct(stats.maxSp)+'%）\n今日のコースは全員おなじ。 #スイングバイ';
+  const t=NAME+'で '+stats.dist.toFixed(1)+' 光年 飛んだ（'+rankOf(stats.dist)+'・最高は光速の'+spPct(stats.maxSp)+'%）\n今日の星の並びは全員おなじ。 #'+NAME;
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://nosunosukawa.github.io/swingby/'),'_blank','noopener');
+});
+
+$('save').addEventListener('click',()=>{
+  $('map').toBlob(b=>{
+    if(!b)return;
+    const f=new File([b],'hoshizutai-'+seed+'.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(()=>{});return}
+    const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
+  },'image/png');
 });
 
 // ---- ループ
@@ -389,7 +512,7 @@ reset();
 requestAnimationFrame(frame);
 
 // 検証用の覗き口（読むだけ）
-window.__test={state:()=>({st,x:P.x,y:P.y,vx:P.vx,vy:P.vy,sp:P.sp,tethered:!!P.a,anchor:P.a?{x:P.a.x,y:P.a.y,R:P.a.R}:null,r:P.r,dir:P.dir,near:P.near?{x:P.near.x,y:P.near.y,R:P.near.R}:null,nd:P.nd,wave:wave.x,dist:stats.dist,t:tNow,anchors:anchors.filter(a=>a.x>P.x-400&&a.x<P.x+900).map(a=>({x:a.x,y:a.y,R:a.R})),stats:Object.assign({},stats)})};
+window.__test={state:()=>({st,x:P.x,y:P.y,vx:P.vx,vy:P.vy,sp:P.sp,tethered:!!P.a,anchor:P.a?{x:P.a.x,y:P.a.y,R:P.a.R,kind:P.a.kind}:null,r:P.r,rot:P.rot,surf:P.surf,dir:P.dir,near:P.near?{x:P.near.x,y:P.near.y,R:P.near.R,kind:P.near.kind}:null,nd:P.nd,wave:wave.x,dist:stats.dist,t:tNow,anchors:anchors.filter(a=>a.x>P.x-400&&a.x<P.x+900).map(a=>({x:a.x,y:a.y,R:a.R,kind:a.kind})),routeLen:route.length,hasGhost:!!ghost,stats:Object.assign({},stats)})};
 })();
 </script>
 </body>
