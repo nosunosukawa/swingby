@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>Novasurf — 波に追われて、星から星へ</title>
-<meta name="description" content="押している間だけ星につかまって回り、離すと飛び出す。巨星・パルサー・ブラックホールを使い分け、後ろから迫る波に乗って何光年飛べるか。星の並びは毎日変わり、その日は全員おなじ。">
+<meta name="description" content="押している間だけ星につかまって回り、離すと飛び出す。巨星・パルサー・ブラックホールを使い分け、後ろから迫る波に乗って何光年飛べるか。星の並びは毎日変わり、その日は全員おなじ。 / Hold to swing around a star, release to fly. Surf the wave that chases you. Same stars for everyone, every day.">
 <meta property="og:title" content="Novasurf — 波に追われて、星から星へ">
-<meta property="og:description" content="星から星へ伝って飛ぶ。迫る波には、乗ってしまえ。今日の星の並びは全員おなじ。">
+<meta property="og:description" content="星から星へ伝って飛ぶ。迫る波には、乗ってしまえ。 / Swing from star to star and surf the wave. Same stars for everyone today.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nosunosukawa.github.io/swingby/">
 <meta name="twitter:card" content="summary">
@@ -38,17 +38,19 @@ button.ghost{background:transparent;color:#eaf2ff;border:1.5px solid rgba(234,24
 #map{position:static;display:block;max-width:min(88vw,520px);max-height:34vh;width:auto;height:auto;border-radius:12px;border:1px solid rgba(255,255,255,.2)}
 .kinds{display:flex;gap:5px 14px;flex-wrap:wrap;justify-content:center;font-size:clamp(11.5px,3.1vw,13.5px);opacity:.9;max-width:36em;line-height:1.5}
 .kinds i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+#lang{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(60px + env(safe-area-inset-right));height:42px;min-width:42px;padding:0 12px;border-radius:21px;font-size:13px;font-weight:800;letter-spacing:.04em;background:rgba(255,255,255,.1);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.25);z-index:5}
 #mute{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:42px;height:42px;padding:0;border-radius:50%;font-size:19px;background:rgba(255,255,255,.1);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.25);z-index:5}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <button id="mute" aria-label="音の切り替え">🔊</button>
+<button id="lang" aria-label="Language / 言語">EN</button>
 <div class="ov" id="title">
-  <div class="sub">ノヴァサーフ ― 波に追われて、星から星へ</div>
+  <div class="sub" id="tSub">ノヴァサーフ ― 波に追われて、星から星へ</div>
   <h1>NOVASURF</h1>
-  <p class="how"><b>押している間</b>、近くの星につかまって回る。<b>離す</b>と、その向きに飛び出す。<br>後ろから来る<b>波</b>に飲まれたら終わり。ただし波のすぐ前は<b>波乗り</b>で加速する。</p>
-  <div class="kinds"><span><i style="background:#8fd0ff"></i>ふつうの星</span><span><i style="background:#ff9a5a"></i>巨星：大きく回って強く射出</span><span><i style="background:#e8fbff"></i>パルサー：一気に加速。長居すると弾かれる</span><span><i style="background:#b06bff"></i>ブラックホール：吸い込まれる前に離すと大加速</span></div>
+  <p class="how" id="tHow"><b>押している間</b>、近くの星につかまって回る。<b>離す</b>と、その向きに飛び出す。<br>後ろから来る<b>波</b>に飲まれたら終わり。ただし波のすぐ前は<b>波乗り</b>で加速する。</p>
+  <div class="kinds" id="tKinds"><span><i style="background:#8fd0ff"></i>ふつうの星</span><span><i style="background:#ff9a5a"></i>巨星：大きく回って強く射出</span><span><i style="background:#e8fbff"></i>パルサー：一気に加速。長居すると弾かれる</span><span><i style="background:#b06bff"></i>ブラックホール：吸い込まれる前に離すと大加速</span></div>
   <div class="day" id="day"></div>
   <button id="start">スタート</button>
   <div class="day" id="bestT"></div>
@@ -57,16 +59,16 @@ button.ghost{background:transparent;color:#eaf2ff;border:1.5px solid rgba(234,24
   <div class="rw">
     <div class="col">
       <div class="sub" id="cause"></div>
-      <div class="big"><span id="rDist">0</span><small>光年</small></div>
+      <div class="big"><span id="rDist">0</span><small id="uLy">光年</small></div>
       <div class="rank" id="rRank"></div>
       <div class="nb" id="rNew"></div>
       <div class="stats">
-        <span>最高速度</span><span id="rSp"></span>
-        <span>ナイス射出</span><span id="rPf"></span>
-        <span>波乗り</span><span id="rSu"></span>
-        <span>重力ターン</span><span id="rTn"></span>
-        <span>星くず</span><span id="rDu"></span>
-        <span>自己ベスト</span><span id="rBest"></span>
+        <span id="lSp">最高速度</span><span id="rSp"></span>
+        <span id="lPf">ナイス射出</span><span id="rPf"></span>
+        <span id="lSu">波乗り</span><span id="rSu"></span>
+        <span id="lTn">重力ターン</span><span id="rTn"></span>
+        <span id="lDu">星くず</span><span id="rDu"></span>
+        <span id="lBest">自己ベスト</span><span id="rBest"></span>
       </div>
     </div>
     <div class="col">
@@ -93,15 +95,51 @@ window.addEventListener('resize',resize);resize();
 function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const now=new Date();
 const seed=now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
-const dayLabel='今日のコース '+(now.getMonth()+1)+'/'+now.getDate()+'（全員おなじ星の並び）';
-$('day').textContent=dayLabel;$('day2').textContent=dayLabel;
 
 const NAME='Novasurf';
+
+// ---- 言葉（日本語と英語）。?lang=en / ?lang=ja、前に選んだ言語、端末の言語の順で決める
+const L={
+  ja:{title:'Novasurf — 波に追われて、星から星へ',sub:'ノヴァサーフ ― 波に追われて、星から星へ',
+    how:'<b>押している間</b>、近くの星につかまって回る。<b>離す</b>と、その向きに飛び出す。<br>後ろから来る<b>波</b>に飲まれたら終わり。ただし波のすぐ前は<b>波乗り</b>で加速する。',
+    kinds:['ふつうの星','巨星：大きく回って強く射出','パルサー：一気に加速。長居すると弾かれる','ブラックホール：吸い込まれる前に離すと大加速'],
+    day:(m,d)=>'今日のコース '+m+'/'+d+'（全員おなじ星の並び）',start:'スタート',best:v=>'自己ベスト '+v+' 光年',
+    ly:'光年',lyLong:'光年',lSp:'最高速度',lPf:'ナイス射出',lSu:'波乗り',lTn:'重力ターン',lDu:'星くず',lBest:'自己ベスト',
+    again:'もう一度',share:'X に投稿',save:'航路図を保存',newBest:'自己ベスト更新！',
+    pct:v=>'光速の '+v+'%',times:v=>v+' 回',pcs:v=>v+' 個',sec:v=>v+' 秒',
+    nice:'ナイス射出！',giant:'巨星スイング！',turn:'重力ターン！',deep:' 深い！',eject:'はじかれた！',slow:'減速…',near:'ニアミス！',surf:'波乗り！',
+    cause:{bh:'ブラックホールに落ちた',star:'星に衝突',wave:'波に飲まれた'},
+    rank:['宇宙ごみ','流れ星','彗星','探査機','恒星間パイロット','銀河の旅人'],
+    hint:'画面を押して、星につかまれ',ghost:'自己ベスト',
+    map:(m,d)=>'航路図 '+m+'/'+d+'（今日の星の並びは全員おなじ）',legend:'線の色＝速さ　金の点＝ナイス射出　✕＝終わった場所　桃色の線＝波',legendOld:'　白い線＝これまでの自己ベスト',
+    shareText:(d,r,p)=>NAME+' で '+d+' 光年 飛んだ（'+r+'・最高は光速の'+p+'%）\n今日の星の並びは全員おなじ。 #'+NAME,
+    mute:'音の切り替え',langBtn:'EN'},
+  en:{title:'Novasurf — Outrun the wave, star to star',sub:'Outrun the wave. Swing from star to star.',
+    how:'<b>Hold</b> to grab the nearest star and swing around it. <b>Release</b> to fly off the way you are heading.<br>The <b>wave</b> behind you ends the run — but fly just ahead of it and you <b>surf</b> it for a boost.',
+    kinds:['Star','Giant: wide swing, strong launch','Pulsar: fast boost, flings you off if you linger','Black hole: release before it swallows you for a huge boost'],
+    day:(m,d)=>"Today's course "+m+'/'+d+' — same stars for everyone',start:'START',best:v=>'Best '+v+' ly',
+    ly:'ly',lyLong:'light-years',lSp:'Top speed',lPf:'Nice launches',lSu:'Surfing',lTn:'Gravity turns',lDu:'Stardust',lBest:'Best',
+    again:'Retry',share:'Post to X',save:'Save route map',newBest:'New best!',
+    pct:v=>v+'% of c',times:v=>String(v),pcs:v=>String(v),sec:v=>v+' s',
+    nice:'Nice launch!',giant:'Giant swing!',turn:'Gravity turn!',deep:' Deep!',eject:'Flung off!',slow:'Slowed…',near:'Near miss!',surf:'Surfing!',
+    cause:{bh:'Fell into a black hole',star:'Crashed into a star',wave:'Swallowed by the wave'},
+    rank:['Space junk','Shooting star','Comet','Probe','Interstellar pilot','Galactic voyager'],
+    hint:'Hold anywhere to grab a star',ghost:'Your best',
+    map:(m,d)=>'Route map '+m+'/'+d+' — same stars for everyone today',legend:'Line color = speed  ·  gold = nice launch  ·  ✕ = end  ·  pink = wave',legendOld:'  ·  white = previous best',
+    shareText:(d,r,p)=>'I flew '+d+' light-years in '+NAME+' ('+r+', top speed '+p+'% of c).\nSame stars for everyone today. #'+NAME,
+    mute:'Toggle sound',langBtn:'日本語'}
+};
+let lang='ja',lastRes=null;
+try{
+  const q=new URLSearchParams(location.search).get('lang'),sv=localStorage.getItem('nv_lang');
+  lang=(q==='en'||q==='ja')?q:(sv==='en'||sv==='ja')?sv:((navigator.language||'ja').toLowerCase().indexOf('ja')===0?'ja':'en');
+}catch(e){}
+const T=()=>L[lang];
 const BASE=430,VMAX=1150,RANGE=340,BOUND=560,LY=200;
 let st='title',P,anchors,allStars=[],route=[],marks=[],routeT=0,ghost=null,dust,parts,texts,trail,wave,tNow=0,rnd,nextX,lastAY,stats,hold=false,shake=0,deadT=0,cause='';
 const cam={x:0,y:0,s:.5};
 let best=0;try{best=parseFloat(localStorage.getItem('swingby_best'))||0}catch(e){}
-function showBest(){$('bestT').textContent=best>0?'自己ベスト '+best.toFixed(1)+' 光年':''}
+function showBest(){$('bestT').textContent=best>0?T().best(best.toFixed(1)):''}
 showBest();
 
 const bg=[];{const r=mulberry(7);for(let i=0;i<170;i++){const l=r();bg.push({x:r(),y:r(),f:l<.55?.04:l<.85?.1:.22,z:l<.55?1:l<.85?1.5:2.2,tw:r()*6.28})}}
@@ -176,12 +214,12 @@ function release(forced){
   const a=P.a,off=Math.abs(Math.atan2(P.vy,P.vx));
   if(!forced&&off<.3&&P.rot>.6&&!a.pf){
     a.pf=true;stats.perfect++;stats.combo++;
-    let bonus=45+Math.min(10,stats.combo)*5,msg=stats.combo>1?'ナイス射出！ ×'+stats.combo:'ナイス射出！',col='#7df9ff';
-    if(a.kind===1){bonus+=70;msg='巨星スイング！'+(stats.combo>1?' ×'+stats.combo:'');col='#ffb37a'}
+    let bonus=45+Math.min(10,stats.combo)*5,msg=T().nice+(stats.combo>1?' ×'+stats.combo:''),col='#7df9ff';
+    if(a.kind===1){bonus+=70;msg=T().giant+(stats.combo>1?' ×'+stats.combo:'');col='#ffb37a'}
     if(a.kind===3){
       // ブラックホールは、吸い込まれた深さに応じて強く飛び出す
       const deep=Math.max(0,Math.min(1,1-(P.r-a.R-12)/Math.max(1,P.r0-a.R-12)));
-      bonus+=50+deep*210;stats.turn++;msg='重力ターン！'+(deep>.6?' 深い！':'');col='#d7a8ff';
+      bonus+=50+deep*210;stats.turn++;msg=T().turn+(deep>.6?T().deep:'');col='#d7a8ff';
     }
     P.sp=Math.min(VMAX,P.sp+bonus);
     marks.push(Math.round(P.x),Math.round(P.y));
@@ -190,7 +228,7 @@ function release(forced){
   }else if(forced){
     // パルサーに長居して弾かれた
     stats.combo=0;a.cool=tNow+1.5;
-    say(P.x,P.y-40,'はじかれた！','#9fe8ff');burst(P.x,P.y,16,'#9fe8ff',300,.5);shake=Math.max(shake,8);
+    say(P.x,P.y-40,T().eject,'#9fe8ff');burst(P.x,P.y,16,'#9fe8ff',300,.5);shake=Math.max(shake,8);
     tone(1200,.15,'square',.06,-700);
   }else if(off>1.1)stats.combo=0;
   const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
@@ -200,7 +238,7 @@ function bounce(){
   // 星雲の壁ではね返る。勢いが落ち、連続のナイス射出も切れる
   P.vy=-P.vy;P.sp=Math.max(BASE,P.sp*.78);stats.combo=0;
   const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
-  burst(P.x,P.y,12,'#ff8ad8',220,.45);say(P.x,P.y+(P.y>0?-30:50),'減速…','#ff8ad8');
+  burst(P.x,P.y,12,'#ff8ad8',220,.45);say(P.x,P.y+(P.y>0?-30:50),T().slow,'#ff8ad8');
   tone(140,.12,'square',.06,-50);shake=Math.max(shake,6);
 }
 function die(why){
@@ -221,7 +259,7 @@ function update(dt){
   if(P.a){
     const a=P.a;
     P.sp=Math.min(VMAX,P.sp+(a.kind===2?240:a.kind===3?140:a.kind===1?55:70)*dt);
-    if(a.kind===3){P.r-=78*dt;if(P.r<a.R+12){die('ブラックホールに落ちた');return}}
+    if(a.kind===3){P.r-=78*dt;if(P.r<a.R+12){die('bh');return}}
     const w=P.sp/P.r*P.dir;
     P.ang+=w*dt;P.rot+=Math.abs(w)*dt;
     P.x=a.x+Math.cos(P.ang)*P.r;P.y=a.y+Math.sin(P.ang)*P.r;
@@ -237,8 +275,8 @@ function update(dt){
     if(P.y<-BOUND&&P.vy<0){P.y=-BOUND;bounce()}
     for(const a of anchors){
       const d=Math.hypot(a.x-P.x,a.y-P.y);
-      if(d<a.R+7){die(a.kind===3?'ブラックホールに落ちた':'星に衝突');return}
-      if(d<a.R+40&&!a.nm){a.nm=true;stats.near++;P.sp=Math.min(VMAX,P.sp+45);say(a.x,a.y-a.R-26,'ニアミス！','#ffd86b');tone(880,.1,'square',.05,200);shake=Math.max(shake,6)}
+      if(d<a.R+7){die(a.kind===3?'bh':'star');return}
+      if(d<a.R+40&&!a.nm){a.nm=true;stats.near++;P.sp=Math.min(VMAX,P.sp+45);say(a.x,a.y-a.R-26,T().near,'#ffd86b');tone(880,.1,'square',.05,200);shake=Math.max(shake,6)}
     }
   }
   for(const d of dust){
@@ -248,14 +286,14 @@ function update(dt){
   // 波の速さ。はじめの32秒は速く追い上げ、そこから先はゆっくり速くなる（腕が上がるほど遠くまで行ける）
   wave.v=tNow<32?220+tNow*6.5:Math.min(950,428+(tNow-32)*2.4);
   wave.x+=wave.v*dt;if(wave.x<P.x-1500)wave.x=P.x-1500;
-  if(P.x<wave.x+8){die('波に飲まれた');return}
+  if(P.x<wave.x+8){die('wave');return}
   // 波乗り：波のすぐ前を前向きに飛んでいる間は加速する
   P.surf=!P.a&&P.x-wave.x<300&&P.vx>0;
   if(P.surf){
     stats.surf+=dt;P.sp=Math.min(VMAX,P.sp+170*dt);
     const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
     if(Math.random()<.5)parts.push({x:P.x-10,y:P.y+(Math.random()-.5)*14,vx:-120-Math.random()*120,vy:(Math.random()-.5)*80,l:.4,m:.4,c:'#ffd86b',z:2+Math.random()*2});
-    if(tNow-P.surfSay>2.5){P.surfSay=tNow;say(P.x,P.y-46,'波乗り！','#ffd86b');tone(520,.2,'sawtooth',.05,400)}
+    if(tNow-P.surfSay>2.5){P.surfSay=tNow;say(P.x,P.y-46,T().surf,'#ffd86b');tone(520,.2,'sawtooth',.05,400)}
   }
   routeT+=dt;if(routeT>=.1){routeT-=.1;if(route.length<9000)route.push(Math.round(P.x),Math.round(P.y),Math.round(P.sp))}
   stats.dist=Math.max(stats.dist,P.x/LY);
@@ -277,25 +315,43 @@ function fx(dt){
   cam.y+=(P.y*.35-cam.y)*Math.min(1,dt*4);
 }
 function spPct(v){return Math.round(v/VMAX*99)}
-function rankOf(d){return d<20?'宇宙ごみ':d<50?'流れ星':d<90?'彗星':d<140?'探査機':d<200?'恒星間パイロット':'銀河の旅人'}
+function rankOf(d){return T().rank[d<20?0:d<50?1:d<90?2:d<140?3:d<200?4:5]}
 function showResult(){
   st='result';
   const d=stats.dist;let nb=false;
   if(d>best){best=d;nb=true;try{localStorage.setItem('swingby_best',String(best))}catch(e){}}
-  $('cause').textContent=cause;
-  $('rDist').textContent=d.toFixed(1);
-  $('rRank').textContent=rankOf(d);
-  $('rNew').textContent=nb?'自己ベスト更新！':'';
-  $('rSp').textContent='光速の '+spPct(stats.maxSp)+'%';
-  $('rPf').textContent=stats.perfect+' 回';
-  $('rDu').textContent=stats.dust+' 個';
-  $('rSu').textContent=stats.surf.toFixed(1)+' 秒';
-  $('rTn').textContent=stats.turn+' 回';
-  $('rBest').textContent=best.toFixed(1)+' 光年';
   const old=ghost;
   if(!ghost||d>ghost.dist){const pts=[];for(let i=0;i<route.length;i+=3)pts.push(route[i],route[i+1]);try{localStorage.setItem('hz_ghost',JSON.stringify({seed,dist:d,pts}))}catch(e){}}
-  drawMap(d,old);
+  lastRes={d,nb,old};
+  renderResult();
   $('result').hidden=false;showBest();
+}
+function renderResult(){
+  const t=T(),d=lastRes.d;
+  $('cause').textContent=t.cause[cause]||'';
+  $('rDist').textContent=d.toFixed(1);
+  $('rRank').textContent=rankOf(d);
+  $('rNew').textContent=lastRes.nb?t.newBest:'';
+  $('rSp').textContent=t.pct(spPct(stats.maxSp));
+  $('rPf').textContent=t.times(stats.perfect);
+  $('rDu').textContent=t.pcs(stats.dust);
+  $('rSu').textContent=t.sec(stats.surf.toFixed(1));
+  $('rTn').textContent=t.times(stats.turn);
+  $('rBest').textContent=best.toFixed(1)+' '+t.ly;
+  drawMap(d,lastRes.old);
+}
+// 画面に置いてある言葉を、いまの言語に入れ替える
+function applyLang(){
+  const t=T();
+  document.documentElement.lang=lang;document.title=t.title;
+  $('tSub').textContent=t.sub;$('tHow').innerHTML=t.how;
+  const ks=$('tKinds').children;for(let i=0;i<ks.length;i++)ks[i].lastChild.textContent=t.kinds[i];
+  const dl=t.day(now.getMonth()+1,now.getDate());$('day').textContent=dl;$('day2').textContent=dl;
+  $('start').textContent=t.start;$('uLy').textContent=t.ly;
+  for(const k of['lSp','lPf','lSu','lTn','lDu','lBest'])$(k).textContent=t[k];
+  $('again').textContent=t.again;$('share').textContent=t.share;$('save').textContent=t.save;
+  $('mute').setAttribute('aria-label',t.mute);$('lang').textContent=t.langBtn;
+  showBest();if(lastRes)renderResult();
 }
 
 // 航路図：今日の星の並びの上に、飛んだ道すじを描く（結果画面と保存用の画像）
@@ -308,8 +364,8 @@ function drawMap(d,old){
   const F='system-ui,-apple-system,"Hiragino Sans","Yu Gothic UI",sans-serif';
   const bgG=m.createLinearGradient(0,0,0,Hm);bgG.addColorStop(0,'#070b1f');bgG.addColorStop(1,'#1a0b30');m.fillStyle=bgG;m.fillRect(0,0,Wm,Hm);
   m.fillStyle='#fff';m.font='900 46px '+F;m.textAlign='left';m.fillText(NAME,24,62);
-  m.font='700 22px '+F;m.fillStyle='rgba(234,242,255,.75)';m.fillText('航路図 '+(now.getMonth()+1)+'/'+now.getDate()+'（今日の星の並びは全員おなじ）',26,98);
-  m.textAlign='right';m.fillStyle='#7df9ff';m.font='900 60px '+F;m.fillText(d.toFixed(1)+' 光年',Wm-24,66);
+  m.font='700 22px '+F;m.fillStyle='rgba(234,242,255,.75)';m.fillText(T().map(now.getMonth()+1,now.getDate()),26,98);
+  m.textAlign='right';m.fillStyle='#7df9ff';m.font='900 60px '+F;m.fillText(d.toFixed(1)+' '+T().ly,Wm-24,66);
   m.font='800 24px '+F;m.fillStyle='#ffd86b';m.fillText(rankOf(d),Wm-24,100);
   const col=['#8fd0ff','#ff9a5a','#e8fbff','#b06bff'];
   for(let r=0;r<rows;r++){
@@ -336,10 +392,10 @@ function drawMap(d,old){
     m.restore();
   }
   m.textAlign='left';m.font='600 19px '+F;m.fillStyle='rgba(234,242,255,.7)';
-  m.fillText('線の色＝速さ　金の点＝ナイス射出　✕＝終わった場所　桃色の線＝波'+(old?'　白い線＝これまでの自己ベスト':''),24,Hm-16);
+  m.fillText(T().legend+(old?T().legendOld:''),24,Hm-16);
   m.textAlign='right';m.fillText('#'+NAME,Wm-24,Hm-16);
 }
-function start(){audio();reset();$('title').hidden=true;$('result').hidden=true;st='play';hold=false;tone(440,.1,'triangle',.08,300)}
+function start(){audio();lastRes=null;reset();$('title').hidden=true;$('result').hidden=true;st='play';hold=false;tone(440,.1,'triangle',.08,300)}
 
 // ---- 描画
 function draw(){
@@ -433,7 +489,7 @@ function draw(){
     g.beginPath();g.moveTo(trail[i-1].x,trail[i-1].y);g.lineTo(trail[i].x,trail[i].y);g.stroke();
   }
   // 今日のコースでの自己ベストの影
-  if(ghost&&st==='play'){const gi=tNow/.1,i=Math.floor(gi)*2,f=gi%1,q=ghost.pts;if(i+3<q.length){const gx=q[i]+(q[i+2]-q[i])*f,gy=q[i+1]+(q[i+3]-q[i+1])*f;g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2;g.setLineDash([4,5]);g.beginPath();g.arc(gx,gy,13,0,6.283);g.stroke();g.setLineDash([]);g.fillStyle='rgba(255,255,255,.6)';g.font='700 18px system-ui,-apple-system,"Hiragino Sans",sans-serif';g.textAlign='center';g.fillText('自己ベスト',gx,gy-22)}}
+  if(ghost&&st==='play'){const gi=tNow/.1,i=Math.floor(gi)*2,f=gi%1,q=ghost.pts;if(i+3<q.length){const gx=q[i]+(q[i+2]-q[i])*f,gy=q[i+1]+(q[i+3]-q[i+1])*f;g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2;g.setLineDash([4,5]);g.beginPath();g.arc(gx,gy,13,0,6.283);g.stroke();g.setLineDash([]);g.fillStyle='rgba(255,255,255,.6)';g.font='700 18px system-ui,-apple-system,"Hiragino Sans",sans-serif';g.textAlign='center';g.fillText(T().ghost,gx,gy-22)}}
   // 自機
   if(st!=='dead'&&st!=='result'){
     const pg=g.createRadialGradient(P.x,P.y,2,P.x,P.y,30);pg.addColorStop(0,'rgba(255,255,255,.9)');pg.addColorStop(1,'rgba(125,249,255,0)');
@@ -455,15 +511,15 @@ function draw(){
     g.shadowColor='rgba(125,249,255,.6)';g.shadowBlur=14;
     g.fillText(stats.dist.toFixed(1),W/2,top+50);g.shadowBlur=0;
     g.font='700 14px system-ui,-apple-system,"Hiragino Sans",sans-serif';g.fillStyle='rgba(234,242,255,.8)';
-    g.fillText('光年',W/2,top+72);
+    g.fillText(T().lyLong,W/2,top+72);
     const bw=Math.min(220,W*.5),bx=W/2-bw/2,by=top+84;
     g.fillStyle='rgba(255,255,255,.14)';g.fillRect(bx,by,bw,6);
     g.fillStyle='hsl('+(190-sf*150)+',100%,65%)';g.fillRect(bx,by,bw*Math.min(1,P.sp/VMAX),6);
     g.fillStyle='rgba(234,242,255,.8)';g.font='700 12px system-ui,-apple-system,"Hiragino Sans",sans-serif';
-    g.fillText('光速の '+spPct(P.sp)+'%',W/2,by+22);
+    g.fillText(T().pct(spPct(P.sp)),W/2,by+22);
     if(st==='play'&&tNow<4&&stats.swings===0){
       g.font='800 '+Math.round(Math.min(22,W*.05))+'px system-ui,-apple-system,"Hiragino Sans",sans-serif';g.fillStyle='rgba(125,249,255,'+(.6+.4*Math.sin(tNow*8))+')';
-      g.fillText('画面を押して、星につかまれ',W/2,H-70);
+      g.fillText(T().hint,W/2,H-70);
     }
   }
 }
@@ -483,10 +539,11 @@ document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 $('start').addEventListener('click',start);
 $('again').addEventListener('click',start);
 $('share').addEventListener('click',()=>{
-  const t=NAME+' で '+stats.dist.toFixed(1)+' 光年 飛んだ（'+rankOf(stats.dist)+'・最高は光速の'+spPct(stats.maxSp)+'%）\n今日の星の並びは全員おなじ。 #'+NAME;
+  const t=T().shareText(stats.dist.toFixed(1),rankOf(stats.dist),spPct(stats.maxSp));
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://nosunosukawa.github.io/swingby/'),'_blank','noopener');
 });
 
+$('lang').addEventListener('click',e=>{e.stopPropagation();lang=lang==='ja'?'en':'ja';try{localStorage.setItem('nv_lang',lang)}catch(er){}applyLang()});
 $('save').addEventListener('click',()=>{
   $('map').toBlob(b=>{
     if(!b)return;
@@ -509,11 +566,12 @@ function frame(ts){
   fx(dt);draw();
 }
 document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden){hold=false;if(humG)humG.gain.value=0}});
+applyLang();
 reset();
 requestAnimationFrame(frame);
 
 // 検証用の覗き口（読むだけ）
-window.__test={state:()=>({st,x:P.x,y:P.y,vx:P.vx,vy:P.vy,sp:P.sp,tethered:!!P.a,anchor:P.a?{x:P.a.x,y:P.a.y,R:P.a.R,kind:P.a.kind}:null,r:P.r,rot:P.rot,surf:P.surf,dir:P.dir,near:P.near?{x:P.near.x,y:P.near.y,R:P.near.R,kind:P.near.kind}:null,nd:P.nd,wave:wave.x,dist:stats.dist,t:tNow,anchors:anchors.filter(a=>a.x>P.x-400&&a.x<P.x+900).map(a=>({x:a.x,y:a.y,R:a.R,kind:a.kind})),routeLen:route.length,hasGhost:!!ghost,stats:Object.assign({},stats)})};
+window.__test={state:()=>({st,x:P.x,y:P.y,vx:P.vx,vy:P.vy,sp:P.sp,tethered:!!P.a,anchor:P.a?{x:P.a.x,y:P.a.y,R:P.a.R,kind:P.a.kind}:null,r:P.r,rot:P.rot,surf:P.surf,dir:P.dir,near:P.near?{x:P.near.x,y:P.near.y,R:P.near.R,kind:P.near.kind}:null,nd:P.nd,wave:wave.x,dist:stats.dist,t:tNow,anchors:anchors.filter(a=>a.x>P.x-400&&a.x<P.x+900).map(a=>({x:a.x,y:a.y,R:a.R,kind:a.kind})),routeLen:route.length,hasGhost:!!ghost,lang,cause,stats:Object.assign({},stats)})};
 })();
 </script>
 </body>
