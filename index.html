@@ -110,7 +110,7 @@ function reset(){
   rnd=mulberry(seed);
   P={x:0,y:0,vx:BASE,vy:0,sp:BASE,a:null,r:0,r0:0,ang:0,dir:1,near:null,nd:1e9,rot:0,surf:false,surfSay:-9};
   anchors=[];allStars=[];route=[];marks=[];routeT=0;dust=[];parts=[];texts=[];trail=[];
-  wave={x:-1000,v:250};tNow=0;nextX=270;lastAY=0;shake=0;
+  wave={x:-1500,v:220};tNow=0;nextX=270;lastAY=0;shake=0;
   stats={dist:0,maxSp:BASE,perfect:0,dust:0,near:0,swings:0,combo:0,chain:0,surf:0,turn:0};
   // 今日のコースでの自己ベストの飛び方（影として一緒に飛ぶ）
   ghost=null;try{const gj=JSON.parse(localStorage.getItem('hz_ghost')||'null');if(gj&&gj.seed===seed&&Array.isArray(gj.pts))ghost=gj}catch(e){}
@@ -245,7 +245,8 @@ function update(dt){
     if(d.got)continue;
     if(Math.abs(d.x-P.x)<38&&Math.abs(d.y-P.y)<38){d.got=true;stats.dust++;stats.chain=Math.min(12,stats.chain+1);tone(520*Math.pow(1.0595,stats.chain*2),.14,'sine',.08);burst(d.x,d.y,6,'#ffe9a8',140,.4)}
   }
-  wave.v=Math.min(950,220+tNow*6.5);
+  // 波の速さ。はじめの32秒は速く追い上げ、そこから先はゆっくり速くなる（腕が上がるほど遠くまで行ける）
+  wave.v=tNow<32?220+tNow*6.5:Math.min(950,428+(tNow-32)*2.4);
   wave.x+=wave.v*dt;if(wave.x<P.x-1500)wave.x=P.x-1500;
   if(P.x<wave.x+8){die('波に飲まれた');return}
   // 波乗り：波のすぐ前を前向きに飛んでいる間は加速する
