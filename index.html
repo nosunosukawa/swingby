@@ -101,28 +101,32 @@ const NAME='Novasurf';
 // ---- 言葉（日本語と英語）。?lang=en / ?lang=ja、前に選んだ言語、端末の言語の順で決める
 const L={
   ja:{title:'Novasurf — 波に追われて、星から星へ',sub:'ノヴァサーフ ― 波に追われて、星から星へ',
-    how:'<b>押している間</b>、近くの星につかまって回る。<b>離す</b>と、その向きに飛び出す。<br>後ろから来る<b>波</b>に飲まれたら終わり。ただし波のすぐ前は<b>波乗り</b>で加速する。',
+    how:'<b>押している間</b>、近くの星につかまって回る。<b>離す</b>と、その向きに飛び出す。<br>後ろから来る<b>波</b>に飲まれたら終わり。波のすぐ前を飛ぶと<b>加速が溜まり</b>、次の星につかまった瞬間に一気に放つ。<br>進むほどコースは<b>坂</b>になり、流れ星・岩・うねりが現れる。',
     kinds:['ふつうの星','巨星：大きく回って強く射出','パルサー：一気に加速。長居すると弾かれる','ブラックホール：吸い込まれる前に離すと大加速'],
     day:(m,d)=>'今日のコース '+m+'/'+d+'（全員おなじ星の並び）',start:'スタート',best:v=>'自己ベスト '+v+' 光年',
     ly:'光年',lyLong:'光年',lSp:'最高速度',lPf:'ナイス射出',lSu:'波乗り',lTn:'重力ターン',lDu:'星くず',lBest:'自己ベスト',
     again:'もう一度',share:'X に投稿',save:'航路図を保存',newBest:'自己ベスト更新！',
     pct:v=>'光速の '+v+'%',times:v=>v+' 回',pcs:v=>v+' 個',sec:v=>v+' 秒',
     nice:'ナイス射出！',giant:'巨星スイング！',turn:'重力ターン！',deep:' 深い！',eject:'はじかれた！',slow:'減速…',near:'ニアミス！',surf:'波乗り！',
-    cause:{bh:'ブラックホールに落ちた',star:'星に衝突',wave:'波に飲まれた'},
+    launch:v=>'波の力 +'+v,warn:'うねりが来る！',surge:'うねり！',
+    zones:[null,['流れ星の域','動く星は、来る時機を読んでつかむ'],['岩の域','岩はつかめない。当たると終わり'],['うねりの域','波がときどき押し寄せる']],
+    cause:{bh:'ブラックホールに落ちた',star:'星に衝突',wave:'波に飲まれた',rock:'岩に衝突'},
     rank:['宇宙ごみ','流れ星','彗星','探査機','恒星間パイロット','銀河の旅人'],
     hint:'画面を押して、星につかまれ',ghost:'自己ベスト',
     map:(m,d)=>'航路図 '+m+'/'+d+'（今日の星の並びは全員おなじ）',legend:'線の色＝速さ　金の点＝ナイス射出　✕＝終わった場所　桃色の線＝波',legendOld:'　白い線＝これまでの自己ベスト',
     shareText:(d,r,p)=>NAME+' で '+d+' 光年 飛んだ（'+r+'・最高は光速の'+p+'%）\n今日の星の並びは全員おなじ。 #'+NAME,
     mute:'音の切り替え',langBtn:'EN'},
   en:{title:'Novasurf — Outrun the wave, star to star',sub:'Outrun the wave. Swing from star to star.',
-    how:'<b>Hold</b> to grab the nearest star and swing around it. <b>Release</b> to fly off the way you are heading.<br>The <b>wave</b> behind you ends the run — but fly just ahead of it and you <b>surf</b> it for a boost.',
+    how:'<b>Hold</b> to grab the nearest star and swing around it. <b>Release</b> to fly off the way you are heading.<br>The <b>wave</b> behind you ends the run — but fly just ahead of it to <b>charge up</b>, then grab a star to launch.<br>Farther on, the course <b>slopes</b>, and drifting stars, rocks and surges appear.',
     kinds:['Star','Giant: wide swing, strong launch','Pulsar: fast boost, flings you off if you linger','Black hole: release before it swallows you for a huge boost'],
     day:(m,d)=>"Today's course "+m+'/'+d+' — same stars for everyone',start:'START',best:v=>'Best '+v+' ly',
     ly:'ly',lyLong:'light-years',lSp:'Top speed',lPf:'Nice launches',lSu:'Surfing',lTn:'Gravity turns',lDu:'Stardust',lBest:'Best',
     again:'Retry',share:'Post to X',save:'Save route map',newBest:'New best!',
     pct:v=>v+'% of c',times:v=>String(v),pcs:v=>String(v),sec:v=>v+' s',
     nice:'Nice launch!',giant:'Giant swing!',turn:'Gravity turn!',deep:' Deep!',eject:'Flung off!',slow:'Slowed…',near:'Near miss!',surf:'Surfing!',
-    cause:{bh:'Fell into a black hole',star:'Crashed into a star',wave:'Swallowed by the wave'},
+    launch:v=>'Wave power +'+v,warn:'Surge incoming!',surge:'Surge!',
+    zones:[null,['Drifting Stars','Time your grab on moving stars'],['Rock Field',"Rocks can't be grabbed. Don't touch them"],['Surge Zone','Now and then, the wave surges forward']],
+    cause:{bh:'Fell into a black hole',star:'Crashed into a star',wave:'Swallowed by the wave',rock:'Hit a rock'},
     rank:['Space junk','Shooting star','Comet','Probe','Interstellar pilot','Galactic voyager'],
     hint:'Hold anywhere to grab a star',ghost:'Your best',
     map:(m,d)=>'Route map '+m+'/'+d+' — same stars for everyone today',legend:'Line color = speed  ·  gold = nice launch  ·  ✕ = end  ·  pink = wave',legendOld:'  ·  white = previous best',
@@ -136,6 +140,30 @@ try{
 }catch(e){}
 const T=()=>L[lang];
 const BASE=430,VMAX=1150,RANGE=340,BOUND=560,LY=200;
+// アプリ版（mobile/novasurf の NovasurfCore）と同じ規則・同じ乱数の列。値は Tunables.swift と揃える
+const RIDE={gap:150,gain:4,push:300,pull:300,ang:.9,rate:170,cap:400,decay:90,min:20};
+const ZONES=[0,40,90,150],GSALT=0x5EEDF00D,BSALT=0x0B3D5A1E;
+const SURGE={min:11,max:16,warn:2,dur:2.6,extra:420};
+// コースの中心線（20 光年から上り・下り・斜めに流れる）。区間ごとに傾きを決め、3次のエルミート補間でつなぐ
+function makeBend(sd){
+  const r=mulberry(sd^BSALT),start=20*LY,full=45*LY,K=[[-1e9,0],[start,0]];
+  function extend(x){
+    while(K.length<4||K[K.length-3][0]<x){
+      const l=K[K.length-1],r0=r(),r1=r(),r2=r(),r3=r();
+      const len=1500+r0*(3000-1500),ramp=Math.max(0,Math.min(1,(l[0]-start)/(full-start)+.35));
+      let s=.16+r1*(.48-.16);s*=r2<.5?1:-1;if(r3<.2)s=0;
+      if(Math.abs(l[1])>2400&&s*l[1]>0)s=-s;
+      K.push([l[0]+len,l[1]+s*ramp*len]);
+    }
+  }
+  function leg(x){if(!(x>K[1][0]))return -1;let lo=1,hi=K.length-2;while(lo<hi){const m=(lo+hi+1)>>1;if(K[m][0]<=x)lo=m;else hi=m-1}return lo<K.length-1?lo:-1}
+  function tg(k){if(k<2||k+1>=K.length)return 0;const a=(K[k][1]-K[k-1][1])/(K[k][0]-K[k-1][0]),b=(K[k+1][1]-K[k][1])/(K[k+1][0]-K[k][0]);return(a+b)/2}
+  function y(x){const k=leg(x);if(k<0)return x<=K[1][0]?0:K[K.length-1][1];const x0=K[k][0],y0=K[k][1],x1=K[k+1][0],y1=K[k+1][1],h=x1-x0,t=(x-x0)/h,t2=t*t,t3=t2*t;return(2*t3-3*t2+1)*y0+(t3-2*t2+t)*h*tg(k)+(-2*t3+3*t2)*y1+(t3-t2)*h*tg(k+1)}
+  function sl(x){const k=leg(x);if(k<0)return 0;const x0=K[k][0],y0=K[k][1],x1=K[k+1][0],y1=K[k+1][1],h=x1-x0,t=(x-x0)/h,t2=t*t;return((6*t2-6*t)*y0+(3*t2-4*t+1)*h*tg(k)+(-6*t2+6*t)*y1+(3*t2-2*t)*h*tg(k+1))/h}
+  return{extend,y,sl};
+}
+function angDiff(a,b){let d=a-b;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return d}
+let bend,grnd,srnd,gDone=0,rocks=[],zone=0,surgeAt=null,surgeEnd=null,banner=null,rideGlow=0;
 let st='title',P,anchors,allStars=[],route=[],marks=[],routeT=0,ghost=null,dust,parts,texts,trail,wave,tNow=0,rnd,nextX,lastAY,stats,hold=false,shake=0,deadT=0,cause='';
 const cam={x:0,y:0,s:.5};
 let best=0;try{best=parseFloat(localStorage.getItem('swingby_best'))||0}catch(e){}
@@ -146,24 +174,53 @@ const bg=[];{const r=mulberry(7);for(let i=0;i<170;i++){const l=r();bg.push({x:r
 
 function reset(){
   rnd=mulberry(seed);
-  P={x:0,y:0,vx:BASE,vy:0,sp:BASE,a:null,r:0,r0:0,ang:0,dir:1,near:null,nd:1e9,rot:0,surf:false,surfSay:-9};
+  P={x:0,y:0,vx:BASE,vy:0,sp:BASE,a:null,r:0,r0:0,ang:0,dir:1,near:null,nd:1e9,rot:0,surf:false,surfSay:-9,charge:0};
+  bend=makeBend(seed);grnd=mulberry(seed^GSALT);srnd=mulberry(seed^(GSALT>>3));gDone=0;rocks=[];zone=0;surgeAt=null;surgeEnd=null;banner=null;
   anchors=[];allStars=[];route=[];marks=[];routeT=0;dust=[];parts=[];texts=[];trail=[];
   wave={x:-1500,v:220};tNow=0;nextX=270;lastAY=0;shake=0;
   stats={dist:0,maxSp:BASE,perfect:0,dust:0,near:0,swings:0,combo:0,chain:0,surf:0,turn:0};
   // 今日のコースでの自己ベストの飛び方（影として一緒に飛ぶ）
   ghost=null;try{const gj=JSON.parse(localStorage.getItem('hz_ghost')||'null');if(gj&&gj.seed===seed&&Array.isArray(gj.pts))ghost=gj}catch(e){}
-  gen();cam.x=P.x;cam.y=0;
+  gen();cam.x=P.x;cam.y=bend.y(P.x);
 }
 function gen(){
+  bend.extend(P.x+2800+1200);
+  const d0=dust.length;
   while(nextX<P.x+2800){
     let y;do{y=(rnd()*2-1)*380}while(Math.abs(y-lastAY)<120);
     lastAY=y;
     const d=Math.min(1,nextX/70000);
     const kr=rnd(),kind=nextX<1400?0:kr<.6?0:kr<.74?1:kr<.88?2:3;
-    const a={x:nextX,y,kind,R:kind===1?34+rnd()*10:kind===2?11:kind===3?20:16+rnd()*14,h:kind===1?(6+rnd()*24|0):kind===2?188:kind===3?272:(rnd()*360|0),ring:kind===0&&rnd()<.3,nm:false,ph:rnd()*6.28,cool:0};
+    const a={x:nextX,y,by:y,lift:0,amp:0,w:0,dph:0,kind,R:kind===1?34+rnd()*10:kind===2?11:kind===3?20:16+rnd()*14,h:kind===1?(6+rnd()*24|0):kind===2?188:kind===3?272:(rnd()*360|0),ring:kind===0&&rnd()<.3,nm:false,ph:rnd()*6.28,cool:0};
     anchors.push(a);allStars.push(a);
     if(rnd()<.75){const dy=(rnd()*2-1)*430;for(let i=0;i<4;i++)dust.push({x:nextX+95+i*38,y:dy+Math.sin(i*.9)*16,got:false})}
     nextX+=250+rnd()*110+d*120;
+  }
+  // 星くずをコースの中心線に乗せる（岩の置き場を決める前に）
+  for(let i=d0;i<dust.length;i++)dust[i].y+=bend.y(dust[i].x);
+  gimmicks();
+}
+// 作られた星に、坂の高さと星域の仕掛け（流れ星・岩）を足す。星の順に、別の乱数の列から引く＝遊び方に左右されない
+function gimmicks(){
+  while(gDone<allStars.length){
+    const i=gDone++,a=allStars[i];
+    const rr=[];for(let k=0;k<8;k++)rr.push(grnd());
+    a.lift=bend.y(a.x);a.y=a.by+a.lift;
+    if(a.x/LY>=ZONES[1]&&(a.kind===0||a.kind===1)&&rr[0]<.4){
+      const amp=90+rr[1]*(170-90);
+      a.amp=Math.min(amp,BOUND-30-Math.abs(a.by));
+      a.w=2*Math.PI/(2.6+rr[2]*(4.2-2.6));a.dph=rr[3]*2*Math.PI;
+    }
+    if(!(i>0&&a.x/LY>=ZONES[2]&&rr[4]<.5))continue;
+    const b=allStars[i-1],x=(a.x+b.x)/2,lift=bend.y(x);
+    const cand=[rr[5],rr[6],(rr[5]+.5)%1].map(v=>(v*2-1)*430);
+    const clear=y=>{
+      for(let k=dust.length-1;k>=0&&dust[k].x>x-400;k--)if(Math.abs(dust[k].x-x)<90&&Math.abs(dust[k].y-(y+lift))<60+70)return false;
+      return[a,b].every(s=>Math.hypot(x-s.x,Math.max(0,Math.abs(y+lift-s.by-s.lift)-s.amp-60))>150+s.R);
+    };
+    const y=cand.find(clear);if(y===undefined)continue;
+    const R=17+rr[7]*(25-17);
+    rocks.push({x,by:y+lift,y:y+lift,R,amp:60*rr[1],w:2*Math.PI/(3+rr[2]*2),ph:rr[3]*6.28,shape:Math.floor(rr[7]*1000)});
   }
 }
 
@@ -209,9 +266,13 @@ function attach(a,d){
   P.a=a;P.r=P.r0=Math.max(d,a.R+26);P.ang=Math.atan2(dy,dx);
   P.dir=(dx*P.vy-dy*P.vx)>=0?1:-1;P.rot=0;stats.swings++;
   tone(320,.09,'triangle',.09,260);
+  // 波乗りで溜めた分を、つかまった瞬間に速さへ足す
+  if(P.charge>=RIDE.min){const boost=Math.min(VMAX-P.sp,P.charge);if(boost>0){P.sp+=boost;say(P.x,P.y-80,T().launch(Math.floor(boost)),'#ffd86b');burst(P.x,P.y,22,'#ffd86b',340,.6);shake=Math.max(shake,7);tone(660,.12,'triangle',.1,500);tone(990,.18,'sine',.07,300)}}
+  P.charge=0;P.surf=false;
 }
 function release(forced){
-  const a=P.a,off=Math.abs(Math.atan2(P.vy,P.vx));
+  // 「前向き」はコースの向き（坂では斜め）
+  const a=P.a,off=Math.abs(angDiff(Math.atan2(P.vy,P.vx),Math.atan(bend.sl(P.x))));
   if(!forced&&off<.3&&P.rot>.6&&!a.pf){
     a.pf=true;stats.perfect++;stats.combo++;
     let bonus=45+Math.min(10,stats.combo)*5,msg=T().nice+(stats.combo>1?' ×'+stats.combo:''),col='#7df9ff';
@@ -234,11 +295,12 @@ function release(forced){
   const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
   P.a=null;noise(.16,.1,900+P.sp);
 }
-function bounce(){
-  // 星雲の壁ではね返る。勢いが落ち、連続のナイス射出も切れる
-  P.vy=-P.vy;P.sp=Math.max(BASE,P.sp*.78);stats.combo=0;
+function bounce(m){
+  // 星雲の壁ではね返る。勢いが落ち、連続のナイス射出も切れる。傾いた壁では、壁の向きを軸に折り返す
+  if(m===0)P.vy=-P.vy;else{const n=Math.sqrt(1+m*m),tx=1/n,ty=m/n,dt2=P.vx*tx+P.vy*ty;P.vx=2*dt2*tx-P.vx;P.vy=2*dt2*ty-P.vy}
+  P.sp=Math.max(BASE,P.sp*.78);stats.combo=0;
   const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
-  burst(P.x,P.y,12,'#ff8ad8',220,.45);say(P.x,P.y+(P.y>0?-30:50),T().slow,'#ff8ad8');
+  burst(P.x,P.y,12,'#ff8ad8',220,.45);say(P.x,P.y+(P.y>bend.y(P.x)?-30:50),T().slow,'#ff8ad8');
   tone(140,.12,'square',.06,-50);shake=Math.max(shake,6);
 }
 function die(why){
@@ -251,6 +313,9 @@ function die(why){
 
 function update(dt){
   tNow+=dt;
+  // 流れ星と岩を、いまの時刻の位置へ
+  for(const a of anchors)if(a.amp>0)a.y=a.by+a.lift+a.amp*Math.sin(a.w*tNow+a.dph);
+  for(const k of rocks)if(k.amp>0)k.y=k.by+k.amp*Math.sin(k.w*tNow+k.ph);
   let bst=null,bd=1e9;
   for(const a of anchors){if(a.cool>tNow)continue;const d=Math.hypot(a.x-P.x,a.y-P.y);if(d<bd){bd=d;bst=a}}
   P.near=(bst&&bd<RANGE)?bst:null;P.nd=bd;
@@ -271,37 +336,53 @@ function update(dt){
     // ブラックホールの近くでは、飛ぶ向きが曲がる
     for(const a of anchors){if(a.kind!==3)continue;const dx=a.x-P.x,dy=a.y-P.y,d2=dx*dx+dy*dy;if(d2<96100){const d=Math.sqrt(d2),gv=Math.min(950,5.2e6/d2);P.vx+=dx/d*gv*dt;P.vy+=dy/d*gv*dt}}
     {const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k}
-    if(P.y>BOUND&&P.vy>0){P.y=BOUND;bounce()}
-    if(P.y<-BOUND&&P.vy<0){P.y=-BOUND;bounce()}
+    // 上下の壁はコースの中心線に沿う
+    {const cy=bend.y(P.x),m=bend.sl(P.x),vn=P.vy-m*P.vx;
+    if(P.y>cy+BOUND&&vn>0){P.y=cy+BOUND;bounce(m)}
+    if(P.y<cy-BOUND&&vn<0){P.y=cy-BOUND;bounce(m)}}
     for(const a of anchors){
       const d=Math.hypot(a.x-P.x,a.y-P.y);
       if(d<a.R+7){die(a.kind===3?'bh':'star');return}
       if(d<a.R+40&&!a.nm){a.nm=true;stats.near++;P.sp=Math.min(VMAX,P.sp+45);say(a.x,a.y-a.R-26,T().near,'#ffd86b');tone(880,.1,'square',.05,200);shake=Math.max(shake,6)}
     }
   }
+  // 岩（回っている間も、飛んでいる間も当たる）
+  for(const k of rocks){if(k.x>P.x+300)break;if(Math.hypot(k.x-P.x,k.y-P.y)<k.R+7){die('rock');return}}
   for(const d of dust){
     if(d.got)continue;
     if(Math.abs(d.x-P.x)<38&&Math.abs(d.y-P.y)<38){d.got=true;stats.dust++;stats.chain=Math.min(12,stats.chain+1);tone(520*Math.pow(1.0595,stats.chain*2),.14,'sine',.08);burst(d.x,d.y,6,'#ffe9a8',140,.4)}
   }
   // 波の速さ。はじめの32秒は速く追い上げ、そこから先はゆっくり速くなる（腕が上がるほど遠くまで行ける）
-  wave.v=tNow<32?220+tNow*6.5:Math.min(950,428+(tNow-32)*2.4);
-  wave.x+=wave.v*dt;if(wave.x<P.x-1500)wave.x=P.x-1500;
-  if(P.x<wave.x+8){die('wave');return}
-  // 波乗り：波のすぐ前を前向きに飛んでいる間は加速する
-  P.surf=!P.a&&P.x-wave.x<300&&P.vx>0;
-  if(P.surf){
-    stats.surf+=dt;P.sp=Math.min(VMAX,P.sp+170*dt);
-    const k=P.sp/Math.hypot(P.vx,P.vy);P.vx*=k;P.vy*=k;
-    if(Math.random()<.5)parts.push({x:P.x-10,y:P.y+(Math.random()-.5)*14,vx:-120-Math.random()*120,vy:(Math.random()-.5)*80,l:.4,m:.4,c:'#ffd86b',z:2+Math.random()*2});
-    if(tNow-P.surfSay>2.5){P.surfSay=tNow;say(P.x,P.y-46,T().surf,'#ffd86b');tone(520,.2,'sawtooth',.05,400)}
+  wave.v=tNow<32?220+tNow*6.5:Math.min(1040,428+(tNow-32)*2.4);
+  // うねり（うねりの域から。合図 → 押し寄せる → 次を決める）
+  if(zone>=3){
+    if(surgeAt===null){const w=SURGE.min+srnd()*(SURGE.max-SURGE.min);surgeAt=tNow+Math.min(w,4);surgeEnd=surgeAt+SURGE.dur}
+    const wa=surgeAt-SURGE.warn;
+    if(tNow-dt<wa&&tNow>=wa){say(P.x+220,P.y-70,T().warn,'#ff7a9c');tone(110,.9,'sawtooth',.07,120);tone(220,.9,'square',.03,240)}
+    if(tNow-dt<surgeAt&&tNow>=surgeAt){say(P.x+220,P.y-70,T().surge,'#ffd0dc');noise(.9,.18,500);shake=Math.max(shake,10)}
+    if(tNow>=surgeAt&&tNow<surgeEnd)wave.v+=SURGE.extra*Math.sin(Math.PI*(tNow-surgeAt)/SURGE.dur);
+    if(tNow>=surgeEnd){const w=SURGE.min+srnd()*(SURGE.max-SURGE.min);surgeAt=tNow+w;surgeEnd=surgeAt+SURGE.dur}
   }
+  wave.x+=wave.v*dt;if(wave.x<P.x-1500)wave.x=P.x-1500;
+  // 波乗り：波の縁の帯を前向きに飛んでいる間は、縁の乗り位置へ引かれ、加速が溜まる（星につかまると放つ）
+  {const off=Math.abs(angDiff(Math.atan2(P.vy,P.vx),Math.atan(bend.sl(P.x)))),gap0=P.x-wave.x;
+  if(!P.a&&P.vx>0&&off<RIDE.ang&&gap0<300&&P.charge<RIDE.cap){
+    const was=P.surf;P.surf=true;
+    P.x+=Math.max(-RIDE.pull,Math.min(RIDE.push,(RIDE.gap-gap0)*RIDE.gain))*dt;
+    stats.surf+=dt;P.charge=Math.min(RIDE.cap,P.charge+RIDE.rate*dt);
+    if(Math.random()<.5)parts.push({x:P.x-10,y:P.y+(Math.random()-.5)*14,vx:-120-Math.random()*120,vy:(Math.random()-.5)*80,l:.4,m:.4,c:'#ffd86b',z:2+Math.random()*2});
+    if(!was||tNow-P.surfSay>2.5){P.surfSay=tNow;say(P.x,P.y-46,T().surf,'#ffd86b');tone(520,.2,'sawtooth',.05,400)}
+  }else{P.surf=false;if(!P.a)P.charge=Math.max(0,P.charge-RIDE.decay*dt)}}
+  if(P.x<wave.x+8){die('wave');return}
   routeT+=dt;if(routeT>=.1){routeT-=.1;if(route.length<9000)route.push(Math.round(P.x),Math.round(P.y),Math.round(P.sp))}
   stats.dist=Math.max(stats.dist,P.x/LY);
+  while(zone+1<ZONES.length&&stats.dist>=ZONES[zone+1]){zone++;const zn=T().zones[zone];banner={z:zone,l:3.2};burst(P.x,P.y,26,'#fff3d6',300,.7);tone(523,.18,'triangle',.08);tone(784,.32,'sine',.07);tone(1047,.45,'sine',.05)}
   stats.maxSp=Math.max(stats.maxSp,P.sp);
   trail.push({x:P.x,y:P.y});if(trail.length>46)trail.shift();
   gen();
   while(anchors.length&&anchors[0].x<wave.x-400)anchors.shift();
   while(dust.length&&dust[0].x<wave.x-400)dust.shift();
+  while(rocks.length&&rocks[0].x<wave.x-400)rocks.shift();
   if(humG&&AC){humG.gain.value=(P.a&&!muted)?.035:0;hum.frequency.value=70+P.sp*.16}
 }
 function fx(dt){
@@ -312,7 +393,10 @@ function fx(dt){
   const ts=Math.min(H/1250,W/760)*(1-.16*sf);
   cam.s+=(ts-cam.s)*Math.min(1,dt*3);
   cam.x=P.x+(W*.17)/cam.s;
-  cam.y+=(P.y*.35-cam.y)*Math.min(1,dt*4);
+  // 上下はコースの中心線を追い、自機が中心から外れた分を少しだけ足す
+  cam.y+=(bend.y(cam.x)+(P.y-bend.y(P.x))*.35-cam.y)*Math.min(1,dt*4);
+  if(banner&&st!=='result'){banner.l-=dt;if(banner.l<=0)banner=null}
+  rideGlow+=((st==='play'&&P.surf?.22+.3*Math.min(1,P.charge/RIDE.cap):0)-rideGlow)*.12;
 }
 function spPct(v){return Math.round(v/VMAX*99)}
 function rankOf(d){return T().rank[d<20?0:d<50?1:d<90?2:d<140?3:d<200?4:5]}
@@ -370,25 +454,26 @@ function drawMap(d,old){
   const col=['#8fd0ff','#ff9a5a','#e8fbff','#b06bff'];
   for(let r=0;r<rows;r++){
     const x0=r*rowW,top=124+r*(rowH+14),cy=top+rowH/2;
-    const X=x=>20+(x-x0)*sc,Y=y=>cy+y*sc;
+    // 坂は平らに直して描く（中心線からの高さ）
+    const X=x=>20+(x-x0)*sc,Y=(y,x)=>cy+(y-bend.y(x))*sc;
     m.save();m.beginPath();m.rect(20,top,1160,rowH);m.clip();
     m.fillStyle='rgba(255,255,255,.045)';m.fillRect(20,top,1160,rowH);
     m.strokeStyle='rgba(255,150,225,.45)';m.lineWidth=1.5;m.setLineDash([6,6]);
-    for(const sg of[-1,1]){m.beginPath();m.moveTo(20,Y(sg*BOUND));m.lineTo(1180,Y(sg*BOUND));m.stroke()}
+    for(const sg of[-1,1]){m.beginPath();m.moveTo(20,Y(sg*BOUND,0));m.lineTo(1180,Y(sg*BOUND,0));m.stroke()}
     m.setLineDash([]);
     if(wave.x>x0&&wave.x<x0+rowW){const wx=X(wave.x),wg=m.createLinearGradient(wx-90,0,wx,0);wg.addColorStop(0,'rgba(255,60,140,0)');wg.addColorStop(1,'rgba(255,60,140,.55)');m.fillStyle=wg;m.fillRect(wx-90,top,90,rowH);m.strokeStyle='rgba(255,200,120,.9)';m.lineWidth=2;m.beginPath();m.moveTo(wx,top);m.lineTo(wx,top+rowH);m.stroke()}
     for(const a of allStars){
       if(a.x<x0-60||a.x>x0+rowW+60)continue;
       m.globalAlpha=a.x>endX+500?.35:1;m.fillStyle=col[a.kind];
-      m.beginPath();m.arc(X(a.x),Y(a.y),Math.max(2.4,a.R*sc*1.5),0,6.283);m.fill();
-      if(a.kind===3){m.strokeStyle='#ffc88c';m.lineWidth=1.5;m.beginPath();m.arc(X(a.x),Y(a.y),a.R*sc*1.5+3,0,6.283);m.stroke()}
+      m.beginPath();m.arc(X(a.x),Y(a.y,a.x),Math.max(2.4,a.R*sc*1.5),0,6.283);m.fill();
+      if(a.kind===3){m.strokeStyle='#ffc88c';m.lineWidth=1.5;m.beginPath();m.arc(X(a.x),Y(a.y,a.x),a.R*sc*1.5+3,0,6.283);m.stroke()}
     }
     m.globalAlpha=1;
-    if(old&&old.pts){m.strokeStyle='rgba(255,255,255,.3)';m.lineWidth=1.5;m.beginPath();for(let i=0;i<old.pts.length;i+=2){const px=X(old.pts[i]),py=Y(old.pts[i+1]);if(i)m.lineTo(px,py);else m.moveTo(px,py)}m.stroke()}
+    if(old&&old.pts){m.strokeStyle='rgba(255,255,255,.3)';m.lineWidth=1.5;m.beginPath();for(let i=0;i<old.pts.length;i+=2){const px=X(old.pts[i]),py=Y(old.pts[i+1],old.pts[i]);if(i)m.lineTo(px,py);else m.moveTo(px,py)}m.stroke()}
     m.lineWidth=2.6;m.lineJoin='round';m.lineCap='round';
-    for(let i=3;i<route.length;i+=3){const sf=Math.max(0,(route[i+2]-BASE)/(VMAX-BASE));m.strokeStyle='hsl('+(190-sf*150)+',100%,68%)';m.beginPath();m.moveTo(X(route[i-3]),Y(route[i-2]));m.lineTo(X(route[i]),Y(route[i+1]));m.stroke()}
-    m.fillStyle='#ffd86b';for(let i=0;i<marks.length;i+=2){m.beginPath();m.arc(X(marks[i]),Y(marks[i+1]),4.5,0,6.283);m.fill()}
-    m.strokeStyle='#ff5a7a';m.lineWidth=3;const ex=X(P.x),ey=Y(P.y);m.beginPath();m.moveTo(ex-7,ey-7);m.lineTo(ex+7,ey+7);m.moveTo(ex+7,ey-7);m.lineTo(ex-7,ey+7);m.stroke();
+    for(let i=3;i<route.length;i+=3){const sf=Math.max(0,(route[i+2]-BASE)/(VMAX-BASE));m.strokeStyle='hsl('+(190-sf*150)+',100%,68%)';m.beginPath();m.moveTo(X(route[i-3]),Y(route[i-2],route[i-3]));m.lineTo(X(route[i]),Y(route[i+1],route[i]));m.stroke()}
+    m.fillStyle='#ffd86b';for(let i=0;i<marks.length;i+=2){m.beginPath();m.arc(X(marks[i]),Y(marks[i+1],marks[i]),4.5,0,6.283);m.fill()}
+    m.strokeStyle='#ff5a7a';m.lineWidth=3;const ex=X(P.x),ey=Y(P.y,P.x);m.beginPath();m.moveTo(ex-7,ey-7);m.lineTo(ex+7,ey+7);m.moveTo(ex+7,ey-7);m.lineTo(ex-7,ey+7);m.stroke();
     m.restore();
   }
   m.textAlign='left';m.font='600 19px '+F;m.fillStyle='rgba(234,242,255,.7)';
@@ -416,18 +501,33 @@ function draw(){
   g.save();g.translate(W/2+shx,H/2+shy);g.scale(cam.s,cam.s);g.translate(-cam.x,-cam.y);
   const vl=cam.x-W/2/cam.s-80,vr=cam.x+W/2/cam.s+80,vt=cam.y-H/2/cam.s-80,vb=cam.y+H/2/cam.s+80;
   // 境界（はね返る星雲）
+  // 壁はコースの中心線 ± BOUND に沿う。光は短い区切りごとに、壁に直角の向きで外へ消える
   for(const sgn of[-1,1]){
-    const y0=sgn*BOUND,gg=g.createLinearGradient(0,y0,0,y0+sgn*260);
-    gg.addColorStop(0,'rgba(255,90,200,.34)');gg.addColorStop(1,'rgba(255,90,200,0)');
-    g.fillStyle=gg;g.fillRect(vl,Math.min(y0,y0+sgn*260),vr-vl,260);
+    const wy=x=>bend.y(x)+sgn*BOUND,step=60;
+    const wall=()=>{g.moveTo(vl,wy(vl));for(let x=vl;x<vr;){x=Math.min(vr,x+step);g.lineTo(x,wy(x))}};
+    // 壁の外側だけに切り抜き、壁の線を太さを変えて薄く重ねる（壁がいちばん濃く、外へ消える）
+    g.save();g.beginPath();wall();const far=sgn>0?vb+2000:vt-2000;g.lineTo(vr,far);g.lineTo(vl,far);g.closePath();g.clip();
+    g.strokeStyle='rgba(255,90,200,.05)';g.lineJoin='round';
+    for(let k=1;k<=8;k++){g.lineWidth=520*k/8;g.beginPath();wall();g.stroke()}
+    g.restore();
     g.strokeStyle='rgba(255,150,225,.7)';g.lineWidth=3;g.setLineDash([18,14]);g.lineDashOffset=-tNow*40;
-    g.beginPath();g.moveTo(vl,y0);g.lineTo(vr,y0);g.stroke();g.setLineDash([]);
+    g.beginPath();g.moveTo(vl,wy(vl));for(let x=vl;x<vr;){x=Math.min(vr,x+step);g.lineTo(x,wy(x))}g.stroke();g.setLineDash([]);
+  }
+  // 岩（ごつごつした多角形。形は岩ごとに決まっている）
+  for(const k of rocks){
+    if(k.x<vl-60||k.x>vr+60)continue;
+    const gl=g.createRadialGradient(k.x,k.y,k.R*.5,k.x,k.y,k.R*2.5);gl.addColorStop(0,'rgba(255,90,60,.45)');gl.addColorStop(1,'rgba(255,90,60,0)');
+    g.fillStyle=gl;g.beginPath();g.arc(k.x,k.y,k.R*2.5,0,6.283);g.fill();
+    const rr=mulberry(k.shape);g.beginPath();
+    for(let c=0;c<7;c++){const an=c/7*2*Math.PI,ra=k.R*(.78+.36*rr());const px=k.x+Math.cos(an)*ra,py=k.y-Math.sin(an)*ra;if(c)g.lineTo(px,py);else g.moveTo(px,py)}
+    g.closePath();g.fillStyle='#2b1b2a';g.fill();g.strokeStyle='#ff8a5c';g.lineWidth=2.5;g.stroke();
   }
   // 星くず
   for(const d of dust){if(d.got||d.x<vl||d.x>vr)continue;const r=6+Math.sin(tNow*6+d.x)*1.5;g.fillStyle='rgba(255,233,168,.25)';g.beginPath();g.arc(d.x,d.y,r*2.2,0,6.283);g.fill();g.fillStyle='#ffe9a8';g.beginPath();g.arc(d.x,d.y,r,0,6.283);g.fill()}
   // 星
   for(const a of anchors){
     if(a.x<vl-RANGE||a.x>vr+RANGE)continue;
+    if(a.amp>0){const c=a.by+a.lift;g.strokeStyle='rgba(234,242,255,.22)';g.lineWidth=2;g.setLineDash([4,10]);g.beginPath();g.moveTo(a.x,c-a.amp);g.lineTo(a.x,c+a.amp);g.stroke();g.setLineDash([]);g.fillStyle='rgba(234,242,255,.3)';for(const e of[-1,1]){g.beginPath();g.arc(a.x,c+e*a.amp,3,0,6.283);g.fill()}}
     if(a.kind===3){
       g.strokeStyle='rgba(190,140,255,.12)';g.lineWidth=2;g.setLineDash([3,12]);g.beginPath();g.arc(a.x,a.y,310,0,6.283);g.stroke();g.setLineDash([]);
       const gl=g.createRadialGradient(a.x,a.y,a.R,a.x,a.y,a.R*4.2);gl.addColorStop(0,'rgba(170,90,255,.55)');gl.addColorStop(1,'rgba(170,90,255,0)');
@@ -469,6 +569,15 @@ function draw(){
     g.fillStyle=wg;g.beginPath();g.moveTo(vl,vt);
     for(let y=vt;y<=vb;y+=40)g.lineTo(wave.x+Math.sin(y*.013+tNow*5)*26+Math.sin(y*.041-tNow*8)*12,y);
     g.lineTo(vl,vb);g.closePath();g.fill();
+    // うねりの合図の間は縁が赤く脈打ち、うねりの間は強く光る
+    const warn=st==='play'&&zone>=3&&surgeAt!==null&&tNow<surgeAt&&tNow>=surgeAt-SURGE.warn,surging=st==='play'&&surgeAt!==null&&tNow>=surgeAt&&tNow<surgeEnd;
+    if(warn||surging||P.surf){
+      const pl=.5+.5*Math.sin(tNow*16);
+      g.strokeStyle=warn?'rgba(255,122,156,'+(.6+.4*pl)+')':surging?'rgba(255,208,220,.95)':'rgba(255,246,216,.85)';
+      g.lineWidth=surging?16:warn?8+6*pl:7;g.beginPath();
+      for(let y=vt;y<=vb;y+=40){const xx=wave.x+Math.sin(y*.013+tNow*5)*26+Math.sin(y*.041-tNow*8)*12;if(y===vt)g.moveTo(xx,y);else g.lineTo(xx,y)}
+      g.stroke();
+    }
   }
   // ロープ
   if(P.a){
@@ -485,7 +594,7 @@ function draw(){
   // 尾
   for(let i=1;i<trail.length;i++){
     const t=i/trail.length;
-    g.strokeStyle=P.surf?'hsla(45,100%,70%,'+(t*.9)+')':'hsla('+(190-sf*150)+',100%,'+(70+sf*10)+'%,'+(t*.8)+')';g.lineWidth=2+t*9;
+    g.strokeStyle=(P.surf||P.charge>40)?'hsla(45,100%,70%,'+(t*.9)+')':'hsla('+(190-sf*150)+',100%,'+(70+sf*10)+'%,'+(t*.8)+')';g.lineWidth=2+t*9;
     g.beginPath();g.moveTo(trail[i-1].x,trail[i-1].y);g.lineTo(trail[i].x,trail[i].y);g.stroke();
   }
   // 今日のコースでの自己ベストの影
@@ -494,6 +603,7 @@ function draw(){
   if(st!=='dead'&&st!=='result'){
     const pg=g.createRadialGradient(P.x,P.y,2,P.x,P.y,30);pg.addColorStop(0,'rgba(255,255,255,.9)');pg.addColorStop(1,'rgba(125,249,255,0)');
     g.fillStyle=pg;g.beginPath();g.arc(P.x,P.y,30,0,6.283);g.fill();
+    if(P.charge>1){const f=Math.min(1,P.charge/RIDE.cap);g.strokeStyle='rgba(255,216,107,'+(f>=1?.6+.4*Math.sin(tNow*20):.9)+')';g.lineWidth=4;g.beginPath();g.arc(P.x,P.y,30,-Math.PI/2,-Math.PI/2+2*Math.PI*f);g.stroke()}
     g.save();g.translate(P.x,P.y);g.rotate(Math.atan2(P.vy,P.vx));
     g.fillStyle='#fff';g.beginPath();g.moveTo(15,0);g.lineTo(-9,8);g.lineTo(-4,0);g.lineTo(-9,-8);g.closePath();g.fill();g.restore();
   }
@@ -506,6 +616,15 @@ function draw(){
   if(st==='play'||st==='dead'){
     const gap=P.x-wave.x;
     if(gap<750){const al=Math.min(.6,(750-gap)/750*.7)*(.7+.3*Math.sin(tNow*14));const wg=g.createLinearGradient(0,0,W*.3,0);wg.addColorStop(0,'rgba(255,50,120,'+al+')');wg.addColorStop(1,'rgba(255,50,120,0)');g.fillStyle=wg;g.fillRect(0,0,W*.3,H)}
+    if(rideGlow>.01){for(const [x0,x1] of[[0,W*.18],[W,W*.82]]){const rg=g.createLinearGradient(x0,0,x1,0);rg.addColorStop(0,'rgba(255,216,107,'+rideGlow+')');rg.addColorStop(1,'rgba(255,216,107,0)');g.fillStyle=rg;g.fillRect(Math.min(x0,x1),0,W*.18,H)}}
+    if(banner){
+      const zn=T().zones[banner.z],a=Math.max(0,Math.min(1,Math.min(banner.l/.6,(3.2-banner.l)/.3)));
+      g.textAlign='center';g.globalAlpha=a;g.fillStyle='#fff3d6';
+      let fs=40;g.font='900 '+fs+'px system-ui,-apple-system,"Hiragino Sans",sans-serif';const w1=g.measureText(zn[0]).width;if(w1>W*.86){fs*=W*.86/w1;g.font='900 '+fs+'px system-ui,-apple-system,"Hiragino Sans",sans-serif'}
+      g.fillText(zn[0],W/2,H*.24);
+      let fs2=19;g.font='700 '+fs2+'px system-ui,-apple-system,"Hiragino Sans",sans-serif';const w2=g.measureText(zn[1]).width;if(w2>W*.86){fs2*=W*.86/w2;g.font='700 '+fs2+'px system-ui,-apple-system,"Hiragino Sans",sans-serif'}
+      g.globalAlpha=a*.9;g.fillStyle='#eaf2ff';g.fillText(zn[1],W/2,H*.24+32);g.globalAlpha=1;
+    }
     const top=10;
     g.textAlign='center';g.fillStyle='#fff';g.font='900 '+Math.round(Math.min(54,W*.12))+'px system-ui,-apple-system,"Hiragino Sans",sans-serif';
     g.shadowColor='rgba(125,249,255,.6)';g.shadowBlur=14;
@@ -562,7 +681,7 @@ function frame(ts){
   let dt=Math.min(1/30,(ts-last)/1000);last=ts;
   if(st==='play'){update(dt/2);if(st==='play')update(dt/2)}
   else if(st==='dead'){deadT+=dt;tNow+=dt;if(deadT>1.1)showResult()}
-  else{tNow+=dt;if(st==='title'){P.x+=120*dt;trail.push({x:P.x,y:P.y});if(trail.length>46)trail.shift();gen()}}
+  else{tNow+=dt;if(st==='title'){P.x+=120*dt;P.y=bend.y(P.x);trail.push({x:P.x,y:P.y});if(trail.length>46)trail.shift();gen()}}
   fx(dt);draw();
 }
 document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden){hold=false;if(humG)humG.gain.value=0}});
@@ -571,7 +690,7 @@ reset();
 requestAnimationFrame(frame);
 
 // 検証用の覗き口（読むだけ）
-window.__test={state:()=>({st,x:P.x,y:P.y,vx:P.vx,vy:P.vy,sp:P.sp,tethered:!!P.a,anchor:P.a?{x:P.a.x,y:P.a.y,R:P.a.R,kind:P.a.kind}:null,r:P.r,rot:P.rot,surf:P.surf,dir:P.dir,near:P.near?{x:P.near.x,y:P.near.y,R:P.near.R,kind:P.near.kind}:null,nd:P.nd,wave:wave.x,dist:stats.dist,t:tNow,anchors:anchors.filter(a=>a.x>P.x-400&&a.x<P.x+900).map(a=>({x:a.x,y:a.y,R:a.R,kind:a.kind})),routeLen:route.length,hasGhost:!!ghost,lang,cause,stats:Object.assign({},stats)})};
+window.__test={course:()=>({stars:allStars.map(a=>[a.x,a.by,a.lift,a.amp,a.w,a.dph,a.kind]),rocks:rocks.map(k=>[k.x,k.by,k.R,k.amp,k.w,k.ph,k.shape])}),state:()=>({st,x:P.x,y:P.y,vx:P.vx,vy:P.vy,sp:P.sp,tethered:!!P.a,anchor:P.a?{x:P.a.x,y:P.a.y,R:P.a.R,kind:P.a.kind}:null,r:P.r,rot:P.rot,surf:P.surf,dir:P.dir,near:P.near?{x:P.near.x,y:P.near.y,R:P.near.R,kind:P.near.kind}:null,nd:P.nd,wave:wave.x,dist:stats.dist,t:tNow,anchors:anchors.filter(a=>a.x>P.x-400&&a.x<P.x+900).map(a=>({x:a.x,y:a.y,R:a.R,kind:a.kind})),routeLen:route.length,hasGhost:!!ghost,lang,cause,stats:Object.assign({},stats),charge:P.charge,zone,rocks:rocks.length,courseY:bend.y(P.x),courseSlope:bend.sl(P.x),seed})};
 })();
 </script>
 </body>
